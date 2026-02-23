@@ -1,0 +1,1239 @@
+<div class="info-libro">
+    <div class="datos  position-relative">
+        <div class="share share-icon color-dark-gray font-weight-light">Compartir<i
+                class="fas fa-share fa-lg color-primary margin-left-10"></i></div>
+        <style type="text/css">
+            section#producto.v2018 .datos p.tituloProducto {
+                font-size: 2.2em;
+                cursor: pointer;
+            }
+
+            section#producto.v2018 .datos p.tituloProducto.todovisible {
+                -webkit-line-clamp: inherit;
+            }
+        </style>
+        <p class="tituloProducto" title="Sadie">Sadie
+        </p>
+        <script type="text/javascript">
+            $("p.tituloProducto").on("click", function () {
+                $("p.tituloProducto.todovisible").length >= 1 ? $("p.tituloProducto.todovisible").removeClass("todovisible") : $("p.tituloProducto").addClass("todovisible");
+            });
+        </script>
+        <p class="font-weight-light margin-0 font-size-h1"><a class="font-color-bl link-underline"
+                href="/libros/autor/courtney-summers">
+                Courtney Summers
+            </a>
+
+
+            (Autor)
+            <a href="/v2/centro-de-autores?idp=51865520" style="margin-left: 3px; font-size: 15px;"><i
+                    class="fas fa-user"></i></a>
+            ·
+            <a class="font-color-text link-underline" href="/libros/editorial/vrya">Vrya</a>
+            · Tapa Blanda
+        </p>
+        <div style="display:none;">
+            <h1>Sadie - Courtney Summers</h1>
+        </div><a class="valoracion font-size-normal display-block margin-bottom-xs-10" id="valoracion"><span
+                class="stars stars-5"><span style="display:none;"><span>5</span> estrellas - de un total de
+                    <span>5</span> estrellas</span></span>
+
+            14 opiniones
+
+
+            <script>
+                $(document).ready(
+                    function () {
+                        location.hash = location.hash;
+                    }
+                );
+            </script><span class="trianguloBajo"></span>
+        </a>
+        <script type="text/javascript">
+            // Al hacer click en .valoracion se genera un scroll hasta el #reviews-header
+            $(".valoracion").click(function () {
+                $('html, body').animate({
+                    scrollTop: $('#reviews-header').offset().top
+                }, 1000);
+            });
+        </script>
+        <style>
+            .tabs div {
+                border-top: solid 1px #ecebeb;
+                border-left: solid 1px #ecebeb;
+                border-right: solid 1px #ecebeb;
+                border-bottom: solid 1px white;
+                border-radius: 5px;
+                padding: 5px 25px;
+                position: relative;
+                top: 1px;
+                left: 3px;
+                background: white;
+                z-index: 1;
+                margin-right: 0px;
+                color: #333;
+                border-bottom: solid 1px #ecebeb;
+                border-bottom-right-radius: 0;
+                border-bottom-left-radius: 0;
+                cursor: pointer;
+                text-transform: capitalize;
+            }
+
+            .tabs div.active {
+                color: #ff5a00;
+                font-weight: bold;
+                border-bottom: solid 1px white;
+            }
+
+            .box-diff:first-of-type {
+                display: flex;
+            }
+
+            .font-size-pxsmall {
+                font-size: 14.5px !important;
+            }
+
+            .half::before {
+                background-size: 310px 300px !important;
+                height: 18px !important;
+                width: 28px !important;
+                background-position: -20px 0px !important;
+            }
+
+            .margin-right-20 {
+                margin-right: 20px;
+            }
+
+            .top-5 {
+                top: 5px;
+            }
+        </style>
+        <style>
+            #detallePrecio {
+                display: flex;
+                gap: 33px;
+            }
+
+            #detallePrecio #opciones .opcionPrecio {
+                display: flex;
+                width: 100%;
+                margin-bottom: 10px;
+                padding: 10px 5px;
+                border-radius: 5px;
+                border: 1px #FF4808 solid;
+                align-items: center;
+                gap: 27px;
+                cursor: pointer;
+                gap: 24px;
+            }
+
+            #detallePrecio #opciones .opcionPrecio.selected {
+                background: #FDF5E4;
+            }
+
+            section#producto.v2018 .datos p.tituloProducto {
+                font-size: 1.5em;
+                font-weight: 500 !important;
+                line-height: normal;
+                margin-top: 0px;
+            }
+
+            section#producto.v2018 .datos .font-weight-light.margin-0.font-size-h1 {
+                font-size: 1.1em;
+                font-weight: 400 !important;
+            }
+
+            .v2018 #data-info-libro .share-icon {
+                display: none;
+            }
+
+            section#producto.v2018 .datos .valoracion {
+                margin: 0px 0 20px 0px;
+            }
+
+            section#producto.v2018 .datos .descripcionBreve>h2.titulo.title {
+                color: #FF5A00;
+                font-size: 1.2em;
+                font-weight: 500 !important;
+            }
+
+            #texto-descripcion {
+                font-size: 0.95em !important;
+            }
+
+            .opcionPrecio div {
+                flex-direction: column;
+                justify-content: center;
+                cursor: pointer;
+            }
+
+            .opcionPrecio .usadoBuenEstado {
+                display: none;
+            }
+
+            .opcionPrecio .colRadio {
+                flex-direction: column;
+                justify-content: flex-start;
+                align-items: flex-start;
+                gap: 10px;
+                display: inline-flex;
+            }
+
+            .opcionPrecio .colOrigen {
+                width: 195px;
+                width: 211px;
+                flex-direction: column;
+                justify-content: center;
+                align-items: flex-start;
+                display: inline-flex;
+            }
+
+            .opcionPrecio .colOrigen .diferenciador span::before {
+                content: "(";
+            }
+
+            .opcionPrecio .colOrigen .diferenciador span::after {
+                content: ")";
+            }
+
+            .opcionPrecio .colOrigen .paisOrigen {
+                font-weight: 500;
+                display: flex;
+                flex-wrap: wrap;
+                align-content: center;
+                flex-direction: row;
+                gap: 4px;
+            }
+
+            .tooltip .tooltipText {
+                visibility: hidden;
+                width: 380px;
+                background-color: white;
+                border-radius: 6px;
+                padding: 13px 5px 13px 6px;
+                position: absolute;
+                z-index: 1;
+                border: solid 1px #ccc;
+                font-weight: 500;
+                text-align: center;
+            }
+
+            .tooltip:hover .tooltipText {
+                visibility: visible;
+            }
+
+            .opcionPrecio .colOrigen strong {
+                font-weight: 700;
+            }
+
+            .opcionPrecio .colOrigen .envioExpress {
+                color: #E14942;
+                font-weight: 700;
+                /*font-size: 1.1em;*/
+            }
+
+            .opcionPrecio .colPrecio {
+                width: 112px;
+                flex-direction: column;
+                justify-content: center;
+                align-items: flex-start;
+                gap: 0;
+                display: inline-flex;
+                align-items: center;
+            }
+
+            .opcionPrecio .colDescuento {
+                width: 48px;
+                height: 31px;
+                justify-content: center;
+                align-items: center;
+                gap: 5px;
+                display: flex;
+                font-size: 1.1em;
+            }
+
+            .opcionPrecio .colDescuento>div {
+                width: 70px;
+                height: 31px;
+                padding: 5px 0px;
+                background: #FF4808;
+                border-radius: 5px;
+                text-align: center;
+                font-size: 18px;
+            }
+
+
+            .opcionPrecio .colPrecio>span {
+                font-weight: 500;
+                word-wrap: break-word;
+            }
+
+            .opcionPrecio .colPrecio>span.pvp {
+                color: #BBBBBB;
+                text-decoration: line-through;
+            }
+
+            .opcionPrecio .colPrecio span.ped {
+                font-size: 1.25em;
+                font-weight: 600;
+            }
+
+            .opcionPrecio .detalle strong {
+                font-weight: 700;
+            }
+
+            .opcionPrecio .detalle span {
+                font-weight: 700;
+            }
+
+            .opcionPrecio .radioButton {
+                width: 20px;
+                height: 20px;
+                position: relative;
+                left: 5px;
+            }
+
+            .opcionPrecio .radioButton .radioBorder {
+                width: 20px;
+                height: 20px;
+                background: white;
+                border-radius: 9999px;
+                border: 1px #FF4808 solid;
+            }
+
+            .opcionPrecio.selected .radioButton .radioContent {
+                width: 12px;
+                height: 12px;
+                border-radius: 4px;
+                position: absolute;
+                top: 5px;
+                left: 5px;
+                background: #FF4808;
+                border-radius: 10px;
+            }
+
+            .opcionForm {
+                border-radius: 5px;
+                border: 1px solid #BBB;
+                display: flex;
+                width: 340px;
+                padding-top: 15px;
+                flex-direction: column;
+                align-items: center;
+                gap: 2px;
+                margin-left: auto;
+                margin-right: 1rem;
+                max-height: 275px;
+            }
+
+            .opcionForm .tituloProducto {
+                font-size: 1.2em;
+            }
+
+            .opcionForm strong {
+                font-weight: 700;
+            }
+
+            .opcionForm .precio {
+                font-size: 1.5em;
+                font-weight: 600;
+                margin-bottom: 10px;
+            }
+
+            .opcionForm .stock {
+                color: #188D39;
+                font-weight: 500;
+                margin-top: 10px;
+                margin-bottom: 10px;
+            }
+
+            .opcionForm form {
+                width: 100%;
+                display: flex;
+                align-items: center;
+            }
+
+            .opcionForm form button {
+                width: calc(100% - 20px);
+                margin: 0 auto;
+                font-size: 1em;
+            }
+
+            .opcionForm .tiempoEnvio {
+                padding: 15px 8px;
+                display: flex;
+                justify-content: space-between;
+                gap: 5px;
+            }
+
+            .opcionForm .tiempoEnvio .diaEnvio {
+                font-size: 0.90em;
+            }
+
+            .opcionForm .tiempoEnvio .tiempoSameDay strong {
+                font-size: 1em;
+            }
+
+            .opcionForm .tiempoEnvio .masInfo {
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                display: flex;
+                cursor: pointer;
+            }
+
+            .opcionForm .tiempoEnvio .masInfo .icono-mas-info {
+                width: 20px;
+                padding: 1px;
+                flex-direction: column;
+                justify-content: space-between;
+                align-items: center;
+                display: flex;
+            }
+
+            .opcionForm .tiempoEnvio .masInfo .texto-mas-info {
+                color: black;
+                font-size: 11px;
+                font-weight: 500;
+                word-wrap: break-word;
+                width: 55px;
+            }
+
+            .book-tools {
+                display: flex;
+                justify-content: space-between;
+                margin: 30px 0px;
+                margin-right: 1rem;
+                font-size: 14px;
+            }
+
+            .book-tools>div {
+                min-width: 200px;
+            }
+
+            .book-tools>div::last-of-type label {
+                text-align: right;
+            }
+
+            .book-tools div label {
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+            }
+
+            .book-tools div:first-child label {
+                justify-content: flex-start;
+            }
+
+            .book-tools div i {
+                color: #ff5a00;
+                font-size: 25px;
+            }
+
+            .calcula-envio {
+                display: none;
+            }
+
+            section#producto.v2018 .label-envio-gratis {
+                margin-left: 0;
+                cursor: pointer;
+                text-align: left;
+                justify-content: flex-start;
+                display: flex;
+                gap: 10px;
+                align-items: center;
+            }
+
+            .modalMasInfo .cerrar {
+                position: absolute;
+                padding: 12px;
+                top: 0;
+                right: 0;
+                cursor: pointer;
+            }
+
+            #modalEnvioGratis {
+                border-radius: 5px;
+                border: 2px solid #BBB;
+                background: #FFF;
+                box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+                text-align: center;
+            }
+
+            #modalEnvioGratis .cerrar {
+                position: absolute;
+                right: 0px;
+                top: 0px;
+                display: block;
+                padding: 15px;
+                cursor: pointer;
+            }
+
+            #modalEnvioGratis .cerrar i {
+                color: #444;
+            }
+
+            .div-detalle-libro-colaborador .div-colaborador-detail {
+                background-color: #f5f5f5;
+            }
+
+            .envio-gratis {
+                display: none;
+            }
+
+            /*
+    .book-tools div div {
+        width: 100%;
+        border-top: 1px solid #ccc;
+    }*/
+
+            #detallePrecio .opcionPrecio .tiempoEnvio .envioExpress {
+                display: flex;
+                flex-wrap: wrap;
+                align-content: center;
+                flex-direction: row;
+                gap: 4px;
+            }
+
+            @media (max-width: 500px) {
+                #detallePrecio {
+                    display: block;
+                }
+
+                #detallePrecio #opciones {
+                    width: 97%;
+                    display: block;
+                }
+
+                #detallePrecio #opciones .opcionPrecio {
+                    gap: 10px;
+                    font-size: 0.9em;
+                }
+
+                #detallePrecio .opcionForm {
+                    display: flex;
+                    border: none;
+                    width: 100%;
+                    padding: 0px;
+                    margin: 15px 0px 20px 0px;
+                }
+
+                .opcionPrecio .usadoBuenEstado {
+                    display: block;
+                }
+
+                #detallePrecio .opcionForm strong,
+                #detallePrecio .opcionForm p,
+                #detallePrecio .opcionForm .tiempoEnvio,
+                #detallePrecio .opcionForm .usadoBuenEstado {
+                    display: none;
+                }
+
+                #detallePrecio .opcionForm form {
+                    order: 1;
+                }
+
+                #detallePrecio .opcionForm p.stock {
+                    display: flex;
+                    justify-content: space-evenly;
+                    order: 2;
+                }
+
+                #detallePrecio .opcionForm .tiempoEnvio {
+                    order: 3;
+                    padding-left: 0px;
+                    width: 99%;
+                    justify-content: flex-start;
+                    gap: 10px;
+                    display: flex;
+                    margin-top: 5px;
+                }
+
+                #detallePrecio .opcionForm .tiempoEnvio strong {
+                    display: inline;
+                }
+
+                .opcionForm .tiempoEnvio .diaEnvio {
+                    /*width: 270px;*/
+                    height: 40px;
+                    justify-content: flex-start;
+                    align-items: center;
+                    gap: 8px;
+                    display: flex;
+                    order: 2;
+                }
+
+                .opcionForm .tiempoEnvio .masInfo {
+                    flex-direction: column;
+                    justify-content: center;
+                    align-items: center;
+                    display: inline-flex;
+                    cursor: pointer;
+                    width: 102px;
+                    order: 1;
+                    margin-right: 0px;
+                }
+
+                #detallePrecio .opcionForm form button {
+                    background: #FF4808 !important;
+                    width: 100%;
+                    font-size: 1.2em;
+                    font-family: Montserrat;
+                }
+
+                #detallePrecio #opciones .opcionPrecio .paisOrigen {
+                    font-weight: 500;
+                }
+
+                .opcionPrecio .colOrigen .diferenciador span {
+                    display: block;
+                }
+
+                .opcionPrecio .colOrigen .diferenciador span::before {
+                    content: "( ";
+                }
+
+                .opcionPrecio .colOrigen .diferenciador span::after {
+                    content: " )";
+                }
+
+
+                #detallePrecio #opciones .opcionPrecio .tiempoEnvio {
+                    font-size: 0.9em;
+                }
+
+                #detallePrecio #opciones .opcionPrecio .paisOrigen .tooltip {
+                    display: none;
+                }
+
+                .tituloRelacionados {
+                    font-size: 1.2em;
+                }
+
+                .book-tools {
+                    --gap_book-tools: 10px;
+                    gap: var(--gap_book-tools);
+                    width: 100%;
+                    margin-top: 0px;
+                    display: flex;
+                    flex-wrap: wrap;
+                }
+
+                .book-tools>div {
+                    min-width: auto;
+                    padding: 8px 4px;
+                    border-radius: 5px;
+                    display: flex;
+                    width: calc(100% / 2 - 20px);
+                }
+
+                .book-tools div label {
+                    text-align: center;
+                }
+
+                .opcionPrecio .colOrigen {
+                    width: 190px;
+                }
+
+                .opcionPrecio .colPrecio {
+                    gap: 0;
+                }
+
+                .opcionPrecio .colRadio {
+                    width: 30px;
+                }
+
+                .opcionPrecio .colDescuento {
+                    width: 44px;
+                    margin-right: 5px;
+                }
+
+                .opcionPrecio .colDescuento>div {
+                    width: 52px;
+                    font-size: 16px;
+                }
+
+                section#producto.v2018 .datos p.tituloProducto {
+                    padding-right: 0px;
+                }
+
+                section#producto p.tituloProducto {
+                    -webkit-line-clamp: 3;
+                }
+
+                .dialog-box {
+                    max-height: 400px;
+                    overflow: auto;
+                }
+
+                .opcionPrecio .colDescuento>div {
+                    width: 52px;
+                    font-size: 16px;
+                }
+
+                .costosImportacionIncluidos {
+                    font-size: 0.9em;
+                }
+            }
+        </style>
+        <div id="detallePrecio">
+            <div id="opciones">
+                <div class="opcionPrecio selected" data-form="1">
+                    <div class="colRadio">
+                        <div class="radioButton">
+                            <div class="radioBorder"></div>
+                            <div class="radioContent"></div>
+                        </div>
+                    </div>
+                    <div class="colOrigen"><strong class="diferenciador">Libro Nuevo</strong><span class="paisOrigen">
+                            Origen: Chile
+                        </span>
+                        <div class="tiempoEnvio">
+
+                            Envío: 7 a 10 días háb.
+
+
+                        </div>
+                    </div>
+                    <div class="colPrecio"><span class="pvp">$ 13.990</span><span class="ped">$ 3.500</span>
+                    </div>
+                    <div class="colDescuento" style="margin-right: 10px;">
+                        <div><span style="color: white; font-weight: 600; word-wrap: break-word;">-75%</span></div>
+                    </div>
+                </div>
+            </div>
+            <script>
+                $('.opcionPrecio').click(function () {
+                    $('.opcionPrecio').removeClass('selected');
+                    $(this).addClass('selected');
+
+                    $('.opcionForm').hide();
+                    $('.opcionForm.idx' + $(this).attr('data-form')).show();
+                });
+            </script>
+            <div class="opcionForm idx1" style=""><strong class="tituloProducto">Libro Nuevo</strong>
+                <p class="stock">
+                    Quedan 66 unidades
+                </p><strong class="precio">$ 3.500</strong>
+                <form action="/carro/agregar"><input type="hidden" name="c_producto" value="53275036"><input
+                        type="hidden" name="c_proveedor" value="88"><button
+                        class="button button-secondary">Comprar</button></form>
+                <div class="tiempoEnvio">
+                    <div class="diaEnvio">
+                        <div><span>Se enviará desde nuestra bodega entre el <strong style="color: green">Miércoles 18 de
+                                    Febrero</strong> y el <strong style="color: green">Lunes 23 de
+                                    Febrero</strong></span></div>
+                    </div>
+                </div>
+            </div>
+            <div id="modalMasInfo1" class="modalMasInfo dialog-box">
+                <div class="modal-content">
+                    <div class="modal-header"><span class="cerrar"><i class="cerrar fas fa-times fa-lg"></i></span>
+                    </div>
+                    <div class="modal-body v2018">
+                        <div class="row envioNormalRow v-0 box-diff margin-top-10">
+                            <div class="col-xs-3 padding-left-0">
+                                <div class="envioNormalLogo text-align-center"><span class="font-weight-strong"
+                                        style="color:#47a84c;">Envío normal</span></div>
+                            </div>
+                            <div class="col-xs-9" style="padding-left: 0;">
+                                <div class="font-weight-light">
+                                    <div class="padding-bottom-5"></div><strong>Se enviará desde nuestra bodega</strong>
+                                    entre el <strong>Martes 17 de Febrero</strong> y el <strong>Viernes 20 de
+                                        Febrero</strong>.
+                                    <div class="margin-top-5">
+                                        Lo recibirás <strong>en cualquier lugar de</strong> Chile entre 1 y 3 días
+                                        hábiles luego del envío.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="book-tools">
+            <div><label onclick="javascript:$('#agregar-deseo button').click()"><i
+                        class="far fa-heart margin-right-10"></i>Agregar a lista de deseos</label>
+                <div style="display:none">
+                    <form id="agregar-deseo" class="agregar-deseo" action="/v2/u"><input type="hidden" name="rto"
+                            value="/pb/51865520"><button class="padding-left-xs-10 float-right no-button" type="submit">
+                            <div class="menu-icon-wrapper">
+                                <div class="margin-top-xs-10 font-color-bl overflow-visible"><i
+                                        class="far fa-heart fa-lg margin-right-10"></i>Agregar a lista de deseos</div>
+                            </div>
+                        </button></form><!-- MODAL lista de deseos -->
+                    <div class="modal modal-deseo-contenido dialog-box"><i
+                            class="cerrar fas fa-times color-gray fa-lg"></i>
+                        <p class="font-size-medium margin-top-xs-10 text-align-center">Elige la lista en la que quieres
+                            agregar tu producto o crea una <span class="nuevaLista color-primary cursor-pointer">nueva
+                                lista</span></p>
+                        <form class="agregandoaLista margin-top-20 margin-bottom-20 display-inline-block width-100"
+                            action="/v2/lista-deseos"><input type="hidden" name="action" value="add_product"><input
+                                type="hidden" name="id_producto" value="51865520"><input type="hidden" name="precio"
+                                value=""><!-- <div class="row"><div class="col-xs-12 col-md-6"> --><select
+                                class="margin-left-0 cursor-pointer width-100" name="id_lista">
+                                <option value="-1">Cargando, espera por favor...</option>
+                            </select><!-- </div><div class="col-xs-12 col-md-6"> --><button
+                                class="agregarEnLista button button-secondary margin-right-0 margin-top-10 font-size-small width-100"
+                                type="button">Agregar</button><!-- </div></div> --></form>
+                        <form class="creandounaLista display-none margin-top-20" action="/v2/lista-deseos"><input
+                                type="hidden" name="action" value="create_add_product"><input type="hidden"
+                                name="id_producto" value="51865520"><input type="hidden" name="precio"
+                                value=""><!-- <div class="row"><div class="col-xs-12 col-md-6"> --><input
+                                class="margin-left-0" type="text" name="nombre"
+                                placeholder="Nombre nueva lista"><!-- </div><div class="col-xs-12 col-md-6"> --><button
+                                class="agregarEnLista button button-secondary margin-right-0 margin-top-10 font-size-small width-100"
+                                type="button">Crear y Agregar</button><!-- </div></div> --></form>
+                        <p class="agregadoAlCarro font-size-normal text-align-center" style="display:none;">
+                            <span>✓</span> Producto agregado <strong>correctamente</strong> a la lista de deseos.</p><a
+                            class="margin-top-20" href="/u" title="Ir a Mis Listas">Ir a Mis Listas</a>
+                    </div><!-- /MODAL lista de deseos -->
+                    <script type="text/javascript">
+                        var data_listas;
+                        $('#agregar-deseo button').click(function () {
+                            $.getJSON("/v2/lista-deseos", { 'action': 'get_all' }, function (data) {
+                                $('.agregandoaLista select').html('');
+                                data_listas = data.listas;
+                                if (Object.keys(data_listas).length > 0) {
+                                    $.each(data.listas, function (idx, itm) {
+                                        $('.agregandoaLista select').append('<option value="' + itm.id + '">' + itm.nombre + '(' + itm.cantidad_productos + ')</option>');
+                                    });
+                                } else {
+                                    $(".modal-deseo-contenido form.agregandoaLista").attr("style", "display:none !important;");
+                                    $(".modal-deseo-contenido form.creandounaLista").fadeIn();
+                                }
+
+                                $(".modal-deseo-contenido").lightbox_me({
+                                    closeClick: false,
+                                    closeEsc: true,
+                                    appearEffect: 'fadeIn',
+                                    closeSelector: '.cerrar'
+                                });
+                            });
+                        });
+
+                        $(".modal-deseo-contenido p span").click(function () {
+                            $(".modal-deseo-contenido form.creandounaLista").fadeIn();
+                        });
+
+
+                    </script>
+                    <style>
+                        .agregarEnLista {
+                            padding: 9px 30px !important;
+                        }
+
+                        .modal-deseo-contenido span.cerrar {
+                            position: absolute !important;
+                            right: 10px !important;
+                            top: 10px !important;
+                            cursor: pointer !important;
+                            background-image: url(https://statics.cdn1.buscalibre.com/images/20190321-1818sprite.png) !important;
+                            background-position: -151px -0px !important;
+                            height: 12px !important;
+                            width: 13px !important;
+                            background-size: 180px !important;
+                        }
+
+                        .modal-deseo-contenido form.creandounaLista input[type=text] {
+                            width: 94% !important;
+                        }
+
+                        .modal-deseo-contenido p {
+                            line-height: 22px;
+                            width: 85%;
+                            margin: 10px auto 0px auto !important;
+                        }
+
+                        .mobile .modal-deseo-contenido.dialog-box {
+                            width: 90% !important;
+                            padding: 10px;
+                        }
+                    </style>
+                </div>
+            </div>
+            <div><label class="share"><i class="fas fa-share-alt margin-right-10"></i>Comparte y gana dinero</label>
+                <div style="display:none"></div>
+            </div>
+        </div>
+        <script>
+            $('.masInfo').click(function () {
+                var idx = $(this).attr('data-idx');
+                $("#modalMasInfo" + idx).lightbox_me({
+                    closeClick: true,
+                    closeEsc: true,
+                    appearEffect: 'fadeIn',
+                    closeSelector: '.cerrar',
+                });
+            });
+        </script>
+        <div class="row calcula-envio font-color-bl padding-left-xs-10">
+            <div class="menu-icon-wrapper">
+                <div class=""><i class="fas fa-calculator fa-lg margin-right-10"></i>Calcula el costo de envío</div>
+            </div>
+        </div>
+        <div id="div-costo" class="margin-top-10" style="display: none">
+            <div class="row font-weight-light font-size-normal">
+                <div class="col-xs-12 col-md-5">
+                    <form><input type="hidden" name="c_producto" value="53275036"><input type="hidden"
+                            name="c_proveedor" value="88"><input type="hidden" name="precio_producto" value="3500.00">
+                        <div><label for="regiones">Provincia o Región *</label><select id="regiones" name="c_region">
+                                <option>Seleccione</option>
+                            </select></div><!--
+              <div><label for="comunas">Comuna *</label><select id="comunas"><option>Selecciona la comuna</option></select></div>
+               -->
+                    </form>
+                </div>
+                <div class="col-xs-12 col-md-7">
+                    <p class="costo_total margin-top-xs-0"></p>
+                </div>
+            </div>
+        </div>
+        <script>
+            $('.calcula-envio').click(
+                function () {
+                    $.getJSON('/v2/info/direccion', { 'get': 'regiones', 'c_pais': 42 }, function (data) {
+                        $('#regiones').html('<option value="0" disabled>Seleccione</option>');
+                        $('#regiones').val(0);
+                        $.each(data, function (idx, value) {
+                            $('#regiones')
+                            $('#regiones').append('<option value="' + value.c_region + '">' + value.region + '</option>');
+                        });
+                    });
+
+                    $("#div-costo").insertAfter($("#box-precio-compra"));
+
+                    $('#div-costo').show();
+                }
+            );
+
+
+            $("#regiones").change(
+                function () {
+                    const c_region = +$(this).closest('#div-costo form').find("#regiones").val();
+
+                    if (c_region > 0) {
+
+                        $.getJSON('/v2/calcular-envio', $(this).closest('#div-costo form').serialize(), function (data) {
+                            $('#div-costo .costo_total').html('Costos de envío hasta la puerta de tu casa.');
+
+                            $('#div-costo .costo_total').append('<br>Envío normal: ' + data.precio_transporte_normal + '.');
+
+                            if (typeof data.precio_transporte_express !== 'undefined') {
+                                $('#div-costo .costo_total').append('<br>Envío Express: ' + data.precio_transporte_express + '.');
+                            }
+                        });
+                    }
+                }
+            );
+        </script>
+        <style>
+            #div-costo {
+                background: #f0f0f0;
+                padding: 10px;
+            }
+
+            #div-costo select {
+                background: white;
+                padding: 0.5em 1em;
+                border-radius: 4px;
+                width: 100%;
+                font-weight: 300;
+                height: 40px;
+            }
+
+            #div-costo button {
+                margin-top: 10px;
+                width: 190px;
+                float: left;
+                padding: 0.6em;
+            }
+
+            #div-costo form>div label {
+                color: #444;
+            }
+
+            #div-costo form>div {
+                margin-bottom: 20px;
+            }
+        </style>
+        <div id="53275036_88" data-producto="51865520" class="filas-precios"></div>
+        <div class="modal background-color-white width-xs-90 top-xs-0" id="modal-mas-imagenes">
+            <div class="modal-content">
+                <div class="modal-header row padding-10"><i class="cerrar fas fa-times fa-lg color-gray"></i>
+                    <div class="col-xs-2 col-md-1 padding-left-0 padding-right-0 margin-right-10"><img
+                            src="https://images.cdn1.buscalibre.com/fit-in/360x360/18/f0/18f04b4505f93f2cb6caeb9c95a67def.jpg"
+                            alt="portada Sadie" title="Sadie"></div>
+                    <div class="col-xs-9 col-md-10 padding-left-0">
+                        <p class="font-weight-light margin-top-0 margin-bottom-0 font-size-xs-medium">Sadie</p>
+                        <p class="font-weight-light color-primary margin-top-0 font-size-xs-small">Courtney Summers</p>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <div class="row margin-top-10">
+                        <div class="col-xs-12 col-md-2 thumbs-mas-imagenes"></div>
+                        <div class="col-xs-12 col-md-10"><img id="mas-imagenes-selected" src=""></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <style>
+            .thumbs-mas-imagenes img {
+                height: 60px;
+                width: 60px !important;
+                border: 2px solid #ccc;
+            }
+
+            .thumbs-mas-imagenes img:hover,
+            .thumbs-mas-imagenes img.selected {
+                border: 2px solid #eb6a40;
+            }
+
+            #modal-mas-imagenes img {
+                max-width: 100%;
+            }
+
+            #modal-mas-imagenes .modal-header {
+                background: #f5f5f5;
+            }
+
+            #modal-mas-imagenes {
+                height: 70%;
+                width: 680px;
+                padding-top: 0;
+                overflow: hidden;
+            }
+
+            .mobile #modal-mas-imagenes {
+                top: 2% !important;
+                margin: 0 !important;
+                left: 2% !important;
+                width: 87% !important;
+                height: 90% !important;
+            }
+
+            #mas-imagenes-selected {
+                max-height: 400px;
+            }
+        </style>
+        <script>
+            $(".mas-imagenes .thumbs-mas-imagenes img").click(
+                function () {
+                    $("#mas-imagenes-selected").attr("src", $(this).attr("data-imagen"));
+                    $(".modal .thumbs-mas-imagenes img").removeClass("selected");
+                    $(".modal .thumbs-mas-imagenes img[data-imagen='" + $(this).attr("src") + "']").addClass("selected");
+
+                    $('#modal-mas-imagenes').lightbox_me({
+                        centered: true,
+                        closeSelector: '.cerrar'
+                    });
+                }
+            );
+
+            $(".modal .thumbs-mas-imagenes img").click(
+                function () {
+                    $("#mas-imagenes-selected").attr("src", $(this).attr("src"));
+                    $(".modal .thumbs-mas-imagenes img").removeClass("selected");
+                    $(this).addClass("selected");
+                }
+            );
+        </script>
+        <div class="descripcionBreve margin-top-20">
+            <style type="text/css">
+                section#producto.v2018 .datos .descripcionBreve>h2.titulo {
+                    color: #FF5A00;
+                    font-size: 1.5em;
+                }
+
+                .div-detalle-libro-colaborador {
+                    margin: 25px 0px 0px 0px;
+                }
+
+                .div-detalle-libro-colaborador .div-colaborador-detail {
+                    margin: 0px;
+                }
+            </style>
+            <h2 class="titulo title font-weight-medium">Reseña del libro "Sadie"</h2>
+            <div style="font-size: 1em !important; font-weight: 400 !important; width: 98%;"
+                class="font-weight-light font-size-small color-text"><span id="texto-descripcion">Como tantas otras
+                    historias, esta comienza con una chica muerta…El mundo de Sadie se desmorona cuando su hermana menor
+                    es brutalmente asesinada.Pero no piensa quedarse de brazos cruzados. Ella vengará a Mattie. Ella
+                    hará que quien le arrebató la vida lo pague.Así que cuando la policía da el caso por perdido, la
+                    joven se fuga de su hogar siguiendo un par de pistas que podrían guiarla hasta el asesino.Mientras
+                    tanto, un locutor famoso se obsesiona con la desaparición de Sadie, y comienza a investigar el caso
+                    en su podcast “Las chicas”.&nbsp;En él intenta comprender qué ocurrió con ella y si su ausencia está
+                    vinculada al crimen de Mattie, con la esperanza de resolver el misterio que la envuelve antes de que
+                    sea demasiado tarde.Un relato cruento y desgarrador que te mantendrá atrapado hasta la última
+                    página.</span><span id="texto-descripcion-translated"></span></div>
+            <!--<a href="#descripcion">Continuar Leyendo</a>-->
+            <div class="div-detalle-libro-colaborador">
+                <style>
+                    .div-colaborador-detail {
+                        display: flex;
+                        margin: 15px;
+                        background-color: #feedd3;
+                    }
+
+                    .div-colaborador-detail .div-colaborador-biography-text {
+                        color: #404040;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        display: -webkit-box;
+                        -webkit-box-orient: vertical;
+                        text-align: justify;
+                    }
+
+                    .div-colaborador-detail .p-colaborador-biography-text .spn-overflow {
+                        display: none;
+                    }
+
+                    @media only screen and (min-width: 600px) {
+                        .div-colaborador-detail .div-colaborador-biography {
+                            padding: 10px 20px;
+                        }
+
+                        .div-colaborador-detail {
+                            border-radius: 100px 0px 0px 100px;
+                        }
+
+                        .div-colaborador-detail div.img-profile-pic {
+                            height: 160px;
+                            width: 160px;
+                            border-radius: 80px;
+                            background-size: cover !important;
+                            background-position: center !important;
+                        }
+
+                        .div-colaborador-detail .div-colaborador-name-heading {
+                            font-weight: 600;
+                            font-size: 15pt;
+                            color: #404040;
+                        }
+
+                        .div-colaborador-detail .p-colaborador-biography-text {
+                            font-size: 12pt;
+                        }
+
+                        .div-colaborador-detail .div-colaborador-biography-text {
+                            margin: 0px;
+                            -webkit-line-clamp: 4;
+                            line-clamp: 4;
+                        }
+
+                        .div-colaborador-detail .p-colaborador-biography-text .spn-overflow {
+                            margin: 0px;
+                            font-weight: 600;
+                            color: #ff5a00;
+                            cursor: pointer;
+                        }
+
+                        .div-colaborador-biography .div-colaborador-detalle-title {
+                            display: flex;
+                        }
+
+                        .div-colaborador-detail .a-ver-pagina-autor {
+                            padding: 5px;
+                            margin: 0px 15px;
+                        }
+                    }
+
+                    @media only screen and (max-width: 600px) {
+                        .div-colaborador-detail .div-colaborador-biography {
+                            padding: 5px 10px;
+                        }
+
+                        .div-colaborador-detail div.img-profile-pic {
+                            height: 90px;
+                            width: 90px;
+                            border-radius: 45px;
+                            background: url('https://statics.cdn1.buscalibre.com/colaboradores/profile_pic/83cdd23155610d0c4fa979120e3ec72b.png');
+                            background-size: cover !important;
+                            background-position: center !important;
+                        }
+
+                        .div-colaborador-detail {
+                            border-radius: 45px 0px 0px 45px;
+                        }
+
+                        .div-colaborador-detail .div-colaborador-name-heading {
+                            font-weight: 600;
+                            font-size: 12pt;
+                            color: #404040;
+                        }
+
+                        .div-colaborador-detail .p-colaborador-biography-text {
+                            font-size: 10pt;
+                            margin: 4px 0px;
+                        }
+
+                        .div-colaborador-detail .div-colaborador-biography-text {
+                            margin: -5px 0px;
+                            -webkit-line-clamp: 2;
+                            line-clamp: 2;
+                        }
+
+                        .div-colaborador-detail .p-colaborador-biography-text .spn-overflow {
+                            width: 100%;
+                            margin: 4px 0px;
+                            color: #ff5a00;
+                        }
+
+                        .div-colaborador-detail .a-ver-pagina-autor {
+                            font-size: 10pt;
+                        }
+                    }
+                </style>
+                <div class="div-colaborador-detail">
+                    <div>
+                        <div class="img-profile-pic"
+                            style="background: url('https://statics.cdn1.buscalibre.com/colaboradores/profile_pic/83cdd23155610d0c4fa979120e3ec72b.png');">
+                        </div>
+                    </div>
+                    <div class="div-colaborador-biography">
+                        <div class="div-colaborador-detalle-title">
+                            <div class="div-colaborador-name-heading">Courtney Summers</div>
+                            <div class="div-colaborador-name-heading" style="font-style: italic;">
+                                &nbsp;
+                                (Autor)
+                            </div><a class="a-ver-pagina-autor" href="/libros/autor/courtney-summers">Ver Página del
+                                Autor</a>
+                        </div>
+                        <div class="p-colaborador-biography-text">
+                            <div class="div-colaborador-biography-text div-colaborador-biography-text-courtney-summers"
+                                style="display: block;"><span id="texto-biografia">Courtney Summers (nacida en 1986,
+                                    Belleville, Ontario, Canadá) es una aclamada autora de novelas juveniles que
+                                    destacan por sus complejas protagonistas femeninas y la exploración de temas oscuros
+                                    como el trauma, la violencia y la justicia, logrando éxito con obras como Sadie
+                                    (2018) y Cracked Up to Be (2008), consolidándose como una voz importante en la
+                                    literatura YA por su estilo directo y sensible, y siendo defensora de la salud
+                                    mental y representación adolescente.</span><span
+                                    id="texto-biografia-translated"></span></div>
+                            <div class="spn-ver-mas spn-ver-mas-courtney-summers spn-overflow" style="display: none;">
+                                Ver más</div>
+                            <div class="span-ver-menos-courtney-summers spn-overflow" style="display: block;">Ver menos
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <script>
+                    $(".spn-ver-mas-courtney-summers").click(() => {
+                        $(".div-colaborador-biography-text-courtney-summers").css("display", "block");
+                        $(".div-colaborador-detail .p-colaborador-biography-text .spn-ver-mas-courtney-summers").css("display", "none");
+                        $(".div-colaborador-detail .p-colaborador-biography-text .span-ver-menos-courtney-summers").css("display", "block");
+                    });
+                    $(".span-ver-menos-courtney-summers").click(() => {
+                        $(".div-colaborador-biography-text-courtney-summers").css("display", "-webkit-box");
+                        $(".div-colaborador-detail .p-colaborador-biography-text .spn-ver-mas-courtney-summers").css("display", "block");
+                        $(".div-colaborador-detail .p-colaborador-biography-text .span-ver-menos-courtney-summers").css("display", "none");
+                    });
+                    if ($('.div-colaborador-biography-text-courtney-summers')[0].offsetHeight < $('.div-colaborador-biography-text')[0].scrollHeight) {
+                        $(".div-colaborador-detail .p-colaborador-biography-text .spn-ver-mas-courtney-summers").css("display", "block");
+                        $(".div-colaborador-detail .p-colaborador-biography-text .span-ver-menos-courtney-summers").css("display", "none");
+                    }
+                </script>
+            </div>
+        </div>
+    </div>
+</div>

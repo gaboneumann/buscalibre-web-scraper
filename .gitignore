@@ -1,0 +1,86 @@
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ===== Virtual Environment =====
+.venv/
+venv/
+ENV/
+env/
+.env
+
+# ===== IDE & Editors =====
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# ===== Testing =====
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+.nox/
+
+# ===== Scraped Data & Outputs =====
+storage/outputs/
+*.csv
+*.json
+data/output/
+*.xlsx
+
+# ===== Temporary Files =====
+tmpclaude-*.cwd
+*.tmp
+*.temp
+*.bak
+*.log
+
+# ===== Project Specific =====
+product.html
+category.html
+.claude.json
+.claude.json.backup
+.claude/
+.cline/
+.copilot/
+
+# ===== OS Files =====
+.DS_Store
+Thumbs.db
+.git/
+.gitignore
+
+# ===== Debug/Sandbox Files =====
+debug/
+*.html
+!tests/fixtures/**/*.html  # Keep fixture HTML files
+
+# ===== Documentation for Study =====
+ROADMAP_PROJECT.md
