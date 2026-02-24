@@ -677,8 +677,6 @@ OUTPUT_FORMAT = ["csv", "json", "xlsx", "postgresql"]
 ## 👨‍💻 Author
 
 **Gabriel Neumann**
-Developer | Web Scraping & Python Specialist
-
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0A66C2?logo=linkedin&logoColor=white)](https://www.linkedin.com/in/gaboneumann/)
 [![GitHub](https://img.shields.io/badge/GitHub-Follow-181717?logo=github&logoColor=white)](https://github.com/gaboneumann)
 
