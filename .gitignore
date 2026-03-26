@@ -70,6 +70,7 @@ category.html
 .claude/
 .cline/
 .copilot/
+.agents/
 
 # ===== OS Files =====
 .DS_Store
@@ -84,3 +85,4 @@ debug/
 
 # ===== Documentation for Study =====
 ROADMAP_PROJECT.md
+CLAUDE.md
