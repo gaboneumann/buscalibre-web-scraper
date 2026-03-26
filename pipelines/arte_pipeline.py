@@ -171,6 +171,10 @@ def run() -> List[Dict]:
                 books_in_session = 0
                 reset_threshold = random.randint(2, 4)  # New random threshold for next cycle
                 time.sleep(random.uniform(10, 15))
+                # Re-establish cascade: visit category before next product (home already visited in reset_session)
+                print(f"📂 [Post-rotation cascade] Re-navigating to category...")
+                client.get(build_page(CATEGORY_URL, page_index), request_type="category")
+                time.sleep(random.uniform(5, 10))
 
             print(f"🔍 [{success_count + 1}/{PRODUCT_TARGET}] Extracting: {full_link}")
             html_prod = client.get(full_link, request_type="product")
