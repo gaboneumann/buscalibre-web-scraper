@@ -1,113 +1,133 @@
 """
-HTTP Client with TLS Fingerprinting and Anti-Detection Features
-Uses curl_cffi to simulate Chrome 120 for Cloudflare WAF evasion
+HTTP Client with Playwright-based browser automation.
+Uses a real Chromium browser to solve AWS WAF JS challenges automatically.
+Browser instance persists across session rotations — CAPTCHA only solved once.
 """
 
 import time
 import random
-from curl_cffi import requests
-from config.settings import DOMAIN_URL, REQUEST_TIMEOUT
-from config.headers import REAL_BROWSER_HEADERS, CHROME_120_UA, get_dynamic_headers
+from playwright.sync_api import sync_playwright
+from config.settings import DOMAIN_URL, CATEGORY_URL, REQUEST_TIMEOUT
+from config.headers import CHROME_120_UA
 from urllib.parse import urljoin
+
 
 class HTTPClient:
     """
-    HTTP client with advanced anti-detection capabilities.
-    Implements:
-    - TLS fingerprinting (impersonate Chrome 120)
-    - Dynamic context-aware headers
-    - Session rotation every 2-4 requests
-    - Human-like jitter delays
+    HTTP client using Playwright headed Chromium.
+    - Browser instance stays alive for the full scraping run.
+    - Session rotation creates a new context (fresh cookies/identity) but
+      preserves the aws-waf-token so the CAPTCHA is only solved once.
     """
 
     def __init__(self, timeout: int = REQUEST_TIMEOUT):
-        self.timeout = timeout
-        self.session = None
-        self.reset_session()  # Initialize session on object creation
+        self.timeout = timeout * 3000  # Convert seconds to ms for Playwright
+        self._playwright = sync_playwright().start()
+        self._browser = self._playwright.chromium.launch(headless=False)
+        self._context = None
+        self._page = None
+        self._waf_token = None  # Cached across session rotations
+        self.reset_session()
 
     def reset_session(self):
-        """Rotate session identity (TLS + Cookies + User-Agent)."""
-        # print("♻️ Rotating client identity (TLS + Cookies + User-Agent)...")  # Uncomment for debugging
-        self.session = requests.Session()
-
-        # Force consistent Chrome 120 User-Agent (no variation to avoid TLS inconsistencies)
-        headers = get_dynamic_headers("home")
-        headers["User-Agent"] = CHROME_120_UA
-
-        # Update base headers
-        self.session.headers.update(headers)
-
+        """Rotate session identity (new context = new cookies/fingerprint).
+        Reuses the cached aws-waf-token to skip CAPTCHA on subsequent rotations.
+        """
+        self._rotate_context()
         self._initialize_session()
 
-    def _initialize_session(self):
-        """Visit home page to warm up cookies and establish TLS handshake."""
-        try:
-            # Initial jitter to avoid looking automated
-            time.sleep(random.uniform(2, 4))
+    def _rotate_context(self):
+        """Close current context and open a fresh one, restoring the WAF token."""
+        if self._context:
+            try:
+                self._context.close()
+            except Exception:
+                pass
 
-            # Use impersonate to match exact Chrome 120 TLS handshake
-            self.session.get(
-                DOMAIN_URL,
-                timeout=self.timeout,
-                impersonate="chrome120"
-            )
+        self._context = self._browser.new_context(user_agent=CHROME_120_UA)
+        self._page = self._context.new_page()
+
+        # Restore WAF token so CAPTCHA doesn't re-trigger
+        if self._waf_token:
+            self._context.add_cookies([self._waf_token])
+
+    def _initialize_session(self):
+        """Visit home → category to warm up session.
+        If CAPTCHA appears (first run or token expired), waits for user to solve it.
+        """
+        try:
+            time.sleep(random.uniform(2, 4))
+            self._page.goto(DOMAIN_URL, wait_until="networkidle", timeout=self.timeout)
+            time.sleep(random.uniform(4, 6))
+
+            self._page.goto(CATEGORY_URL, wait_until="networkidle", timeout=self.timeout)
+
+            if "Human Verification" in self._page.title():
+                print("🧩 CAPTCHA detected — please solve it in the browser window...")
+                self._page.wait_for_function(
+                    "document.title !== 'Human Verification'",
+                    timeout=180000
+                )
+                print("✅ CAPTCHA solved!")
+
+            # Cache WAF token for next rotation
+            cookies = self._context.cookies()
+            waf = next((c for c in cookies if c["name"] == "aws-waf-token"), None)
+            if waf:
+                self._waf_token = waf
+
+            print("✅ Session initialized.")
         except Exception as e:
-            print(f"⚠️ WARNING: Could not initialize session at home: {e}")
+            print(f"⚠️ WARNING: Could not initialize session: {e}")
 
     def get(self, endpoint: str, request_type: str = "product") -> str | None:
         """
-        Perform GET request with dynamic headers and status handling.
+        Navigate to URL using Playwright and return page HTML.
 
         Args:
-            endpoint: URL endpoint or path
+            endpoint: Full URL or path
             request_type: One of "home", "category", "product"
 
         Returns:
-            HTML response text or None on error
+            HTML content or None on error/block
         """
         if not endpoint:
             raise ValueError("Endpoint cannot be empty")
 
         url = endpoint if endpoint.startswith("http") else urljoin(DOMAIN_URL, endpoint)
 
-        # --- ANTI-DETECTION LAYER 1: DYNAMIC HEADERS BASED ON CONTEXT ---
-        headers = get_dynamic_headers(request_type)
-        headers["User-Agent"] = CHROME_120_UA
-        self.session.headers.update(headers)
-
-        # --- ANTI-DETECTION LAYER 2: RANDOM REFERER ROTATION ---
-        referers = [
-            f"{DOMAIN_URL}libros/arte",
-            "https://www.google.com/",
-            DOMAIN_URL,
-            "https://www.bing.com/"
-        ]
-
-        # Simulate random navigation origin for product requests
+        # Only set Referer for product pages — Playwright generates all other headers naturally
         if "/p/" in url or "libro-" in url:
-            self.session.headers.update({"Referer": random.choice(referers)})
+            referers = [
+                f"{DOMAIN_URL}libros/arte",
+                "https://www.google.com/",
+                DOMAIN_URL,
+                "https://www.bing.com/"
+            ]
+            self._page.set_extra_http_headers({"Referer": random.choice(referers)})
 
         try:
-            # Human-like delay before request
             time.sleep(random.uniform(2.0, 5.0))
 
-            # Request with TLS fingerprinting (chrome120)
-            response = self.session.get(
-                url,
-                timeout=self.timeout,
-                impersonate="chrome120"
-            )
+            response = self._page.goto(url, wait_until="networkidle", timeout=self.timeout)
 
-            if response.status_code == 200:
-                if len(response.text) < 1000:
+            # WAF challenge: wait for JS token to settle, then retry once
+            if response.status in (202, 405):
+                print(f"🔑 WAF challenge on {url} — retrying with token...")
+                time.sleep(random.uniform(6, 9))
+                response = self._page.goto(url, wait_until="networkidle", timeout=self.timeout)
+
+            if response.status == 200:
+                html = self._page.content()
+                if len(html) < 1000:
                     print(f"⚠️ Warning: Short response from {url}")
-                return response.text
+                return html
 
-            if response.status_code == 202:
-                print(f"⛔ 202 BLOCKED detected on {url}. Aborting.")
+            if response.status in (202, 405):
+                print(f"⛔ WAF BLOCKED ({response.status}) on {url}. Aborting.")
                 return None
 
-            print(f"❌ HTTP Error {response.status_code} on {url}")
+            print(f"❌ HTTP Error {response.status} on {url}")
             return None
 
         except Exception as e:
@@ -115,26 +135,12 @@ class HTTPClient:
             return None
 
     def navigate_to_category(self, category_url: str) -> str | None:
-        """
-        Cascade navigation: Home → Category (more human-like).
-        Simulates user interest in the category before exploring products.
-
-        Args:
-            category_url: Full category URL or path
-
-        Returns:
-            Category page HTML or None on error
-        """
+        """Cascade navigation: Home → Category."""
         try:
-            # Step 1: Already visited home in reset_session()
             print("🏠 [Cascade] Already at home")
-
-            # Step 2: Navigate to category
             print(f"📂 [Cascade] Navigating to category: {category_url}")
-            time.sleep(random.uniform(3, 6))  # Browsing time before clicking category
-
+            time.sleep(random.uniform(3, 6))
             return self.get(category_url, request_type="category")
-
         except Exception as e:
             print(f"❌ Cascade navigation error: {e}")
             return None
