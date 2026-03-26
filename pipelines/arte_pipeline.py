@@ -65,40 +65,6 @@ def get_scraped_urls() -> set:
         print(f"⚠️ WARNING: Could not read checkpoint file: {e}")
     return scraped_urls
 
-def collect_product_links(client: HTTPClient) -> List[str]:
-    """
-    Collect product links across multiple category pages.
-
-    Implements pagination with a target number of products.
-
-    Args:
-        client: HTTPClient instance with anti-detection features
-
-    Returns:
-        List of unique product links collected
-    """
-    all_links = []
-    pages_needed = ceil(PRODUCT_TARGET / PRODUCT_PER_PAGE)
-
-    for page_index in range(1, pages_needed + 1):
-        if len(all_links) >= PRODUCT_TARGET:
-            break
-
-        page_url = build_page(CATEGORY_URL, page_index)
-
-        if page_index == 1:
-            html_cat = client.navigate_to_category(page_url)
-        else:
-            html_cat = client.get(page_url, request_type="category")
-
-        if html_cat is None:
-            continue
-
-        links = parse_product_links(html_cat)
-        all_links.extend(links)
-
-    return all_links[:PRODUCT_TARGET]
-
 def run() -> List[Dict]:
     """
     Execute main scraping pipeline.

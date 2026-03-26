@@ -6,7 +6,6 @@ CATEGORY_URL = 'https://www.buscalibre.cl/libros/arte'
 
 # HTTP request settings
 REQUEST_TIMEOUT = 10
-MAX_RETRIES = 3
 
 # Rate limiting delays (in seconds)
 DELAY_MIN = 30.0
