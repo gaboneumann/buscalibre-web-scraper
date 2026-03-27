@@ -30,16 +30,6 @@ ENV/
 env/
 .env
 
-# ===== IDE & Editors =====
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-.DS_Store
-*.sublime-project
-*.sublime-workspace
-
 # ===== Testing =====
 .pytest_cache/
 .coverage
@@ -48,41 +38,43 @@ htmlcov/
 .hypothesis/
 .nox/
 
+# ===== IDE & Editors =====
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+
+# ===== OS Files =====
+.DS_Store
+Thumbs.db
+
 # ===== Scraped Data & Outputs =====
 storage/outputs/
+data/output/
 *.csv
 *.json
-data/output/
 *.xlsx
 
-# ===== Temporary Files =====
-tmpclaude-*.cwd
+# ===== Debug & Temporary Files =====
+*.html
+!tests/fixtures/**/*.html
 *.tmp
 *.temp
 *.bak
 *.log
 
-# ===== Project Specific =====
-product.html
-category.html
+# ===== AI Tools =====
+.claude/
 .claude.json
 .claude.json.backup
-.claude/
 .cline/
 .copilot/
 .agents/
-
-# ===== OS Files =====
-.DS_Store
-Thumbs.db
-.git/
-.gitignore
-
-# ===== Debug/Sandbox Files =====
-debug/
-*.html
-!tests/fixtures/**/*.html  # Keep fixture HTML files
-
-# ===== Documentation for Study =====
-ROADMAP_PROJECT.md
+tmpclaude-*.cwd
 CLAUDE.md
+
+# ===== Project Specific =====
+ROADMAP_PROJECT.md
