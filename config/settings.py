@@ -5,11 +5,11 @@ DOMAIN_URL = 'https://www.buscalibre.cl/'
 CATEGORY_URL = 'https://www.buscalibre.cl/libros/arte'
 
 # HTTP request settings
-REQUEST_TIMEOUT = 10
+REQUEST_TIMEOUT = 20
 
 # Rate limiting delays (in seconds)
-DELAY_MIN = 30.0
-DELAY_MAX = 55.0
+DELAY_MIN = 8.0
+DELAY_MAX = 15.0
 
 # Scraping volume limits
 PRODUCT_TARGET = 100
