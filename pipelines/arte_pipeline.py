@@ -80,7 +80,9 @@ def run() -> List[Dict]:
     scraped_urls = get_scraped_urls()
     pages_needed = ceil(PRODUCT_TARGET / PRODUCT_PER_PAGE)
 
-    success_count = 0
+    success_count = len(scraped_urls)  # Resume from existing checkpoint
+    if success_count > 0:
+        print(f"📋 Resuming from checkpoint: {success_count}/{PRODUCT_TARGET} already scraped.")
     consecutive_blocks = 0
     BLOCK_THRESHOLD = 3  # Auto-stop after 3 consecutive 202 errors
 
