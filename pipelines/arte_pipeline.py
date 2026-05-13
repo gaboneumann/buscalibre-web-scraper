@@ -3,17 +3,14 @@ Main scraping pipeline orchestrator for BuscaLibre Art Books Category.
 Implements two-level nested iteration with streaming CSV writes.
 """
 
-import time
-import random
 import csv
 import os
-from math import ceil
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 from core.client import HTTPClient
-from core.paginator import build_page
 from core.parser import parse_product_links
 from core.parser_product import parse_product
+from config import settings
 from config.settings import (
     CATEGORY_URL,
     DELAY_MIN,
@@ -22,6 +19,15 @@ from config.settings import (
     OUTPUT_PATH,
     PRODUCT_TARGET,
     PRODUCT_PER_PAGE
+)
+from pipelines.base_pipeline import BasePipeline
+from pipelines.config import PipelineConfig
+from pipelines.components import (
+    PipelineOrchestrator,
+    SessionRotationPolicy,
+    BlockDetectionPolicy,
+    DelayPolicy,
+    CheckpointManager,
 )
 
 def save_single_record(record: Dict):
@@ -37,7 +43,7 @@ def save_single_record(record: Dict):
         os.makedirs(target_dir, exist_ok=True)
 
     with open(OUTPUT_PATH, mode='a', newline='', encoding='utf-8') as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter=',')
         if not file_exists:
             writer.writeheader()
         writer.writerow(record)
@@ -65,136 +71,69 @@ def get_scraped_urls() -> set:
         print(f"⚠️ WARNING: Could not read checkpoint file: {e}")
     return scraped_urls
 
-def run() -> List[Dict]:
-    """
-    Execute main scraping pipeline.
 
-    Two-level nested iteration:
-    - Level 1: Iterate through category pages
-    - Level 2: Iterate through products on each page
+class SampleArtePipeline(BasePipeline):
+    """
+    Buscalibre Art Books scraper implementing two-level nested iteration
+    with streaming CSV writes and anti-detection layers.
+    """
+
+    def collect_product_links(self, html: str) -> List[str]:
+        """Extract product links from category HTML."""
+        if html is None:
+            return []
+        return parse_product_links(html)
+
+    def parse_product(self, html: str) -> Optional[Dict]:
+        """Extract product data from product page HTML."""
+        if html is None:
+            return None
+        return parse_product(html)
+
+    def get_csv_fields(self) -> List[str]:
+        """Return list of CSV field names in order."""
+        return ["title", "author", "price", "stock", "page_index", "product_url", "source"]
+
+    def _create_orchestrator(self) -> PipelineOrchestrator:
+        """Create and configure pipeline orchestrator with policies."""
+        checkpoint_mgr = CheckpointManager(self.config.output_path)
+        session_policy = SessionRotationPolicy()
+        block_policy = BlockDetectionPolicy()
+        delay_policy = DelayPolicy(
+            delay_min=self.config.delay_min,
+            delay_max=self.config.delay_max,
+        )
+
+        return PipelineOrchestrator(
+            client=self.client,
+            extract_fn=self.collect_product_links,
+            transform_fn=self.parse_product,
+            checkpoint_mgr=checkpoint_mgr,
+            session_policy=session_policy,
+            block_policy=block_policy,
+            delay_policy=delay_policy,
+            config=self.config,
+        )
+
+    def run(self) -> int:
+        """
+        Execute main scraping pipeline via orchestrator.
+
+        Returns:
+            Number of products successfully scraped and saved.
+        """
+        orchestrator = self._create_orchestrator()
+        return orchestrator.run()
+
+def run() -> int:
+    """
+    Execute main scraping pipeline via SampleArtePipeline.
+    Preserves backward compatibility with global settings.
 
     Returns:
-        Empty list (data written via streaming to CSV)
+        Number of products successfully scraped and saved.
     """
     client = HTTPClient()
-    scraped_urls = get_scraped_urls()
-    pages_needed = ceil(PRODUCT_TARGET / PRODUCT_PER_PAGE)
-
-    success_count = len(scraped_urls)  # Resume from existing checkpoint
-    if success_count > 0:
-        print(f"📋 Resuming from checkpoint: {success_count}/{PRODUCT_TARGET} already scraped.")
-    consecutive_blocks = 0
-    BLOCK_THRESHOLD = 3  # Auto-stop after 3 consecutive 202 errors
-
-    # --- ANTI-DETECTION LAYER 3: Random session rotation (2-4 products) ---
-    books_in_session = 0
-    reset_threshold = random.randint(2, 4)
-
-    for page_index in range(1, pages_needed + 1):
-        if success_count >= PRODUCT_TARGET:
-            break
-
-        print(f"\n--- 📑 BATCH: Category Page {page_index} ---")
-
-        # Preventive session reset when moving to new category page
-        client.reset_session()
-
-        page_url = build_page(CATEGORY_URL, page_index)
-
-        # --- ANTI-DETECTION LAYER 6: Cascading Navigation ---
-        # First page uses full cascade (home → category); others just GET directly
-        if page_index == 1:
-            # First page: full cascade navigation
-            html_cat = client.navigate_to_category(page_url)
-        else:
-            # Subsequent pages: direct GET with category context
-            html_cat = client.get(page_url, request_type="category")
-
-        if html_cat is None:
-            consecutive_blocks += 1
-            if consecutive_blocks >= BLOCK_THRESHOLD:
-                print("🚨 AUTO-STOP: Persistent category page blocking. Aborting.")
-                return []
-            continue
-
-        links = parse_product_links(html_cat)
-        consecutive_blocks = 0
-
-        # --- ANTI-DETECTION LAYER 7: Link Shuffling ---
-        random.shuffle(links)
-        print(f"🔀 Links on page {page_index} shuffled.")
-
-        for link in links:
-            if success_count >= PRODUCT_TARGET:
-                break
-
-            full_link = link if link.startswith("http") else f"https://www.buscalibre.cl{link}"
-            if full_link in scraped_urls:
-                continue
-
-            # --- ANTI-DETECTION LAYER 3: Proactive Random Session Rotation ---
-            if books_in_session >= reset_threshold:
-                print(f"♻️ Random rotation (threshold reached: {reset_threshold}): Resetting session...")
-                client.reset_session()
-                books_in_session = 0
-                reset_threshold = random.randint(2, 4)  # New random threshold for next cycle
-                time.sleep(random.uniform(10, 15))
-                # Re-establish cascade: visit category before next product (home already visited in reset_session)
-                print(f"📂 [Post-rotation cascade] Re-navigating to category...")
-                client.get(build_page(CATEGORY_URL, page_index), request_type="category")
-                time.sleep(random.uniform(5, 10))
-
-            print(f"🔍 [{success_count + 1}/{PRODUCT_TARGET}] Extracting: {full_link}")
-            html_prod = client.get(full_link, request_type="product")
-
-            # --- ANTI-DETECTION LAYER 3: Auto-stop on excessive blocking ---
-            if html_prod is None:
-                consecutive_blocks += 1
-                print(f"⛔ 202 block detected ({consecutive_blocks}/{BLOCK_THRESHOLD}).")
-
-                if consecutive_blocks >= BLOCK_THRESHOLD:
-                    print("🚨 AUTO-STOP: Too many consecutive blocks.")
-                    return []
-
-                # On failure, apply forced reset and wait before retrying
-                time.sleep(random.uniform(45, 70))  # Post-block recovery delay
-                client.reset_session()
-                books_in_session = 0
-                continue  # Skip to next link without parsing
-
-            # SUCCESS: Reset block counter and process data
-            consecutive_blocks = 0
-            data = parse_product(html_prod)
-
-            if data and data.get("title"):
-                record = {
-                    "title": data["title"],
-                    "author": data.get("author", "Anonymous"),
-                    "price": data.get("price"),
-                    "stock": data.get("stock_status") == "in_stock",
-                    "page_index": page_index,
-                    "product_url": full_link,
-                    "source": SOURCE_NAME,
-                }
-                save_single_record(record)
-                scraped_urls.add(full_link)
-                success_count += 1
-                books_in_session += 1  # Increment session counter
-                print(f"✅ Saved: {record['title'][:30]}")
-
-            # --- ANTI-DETECTION LAYER 4a: Main delay between products ---
-            time.sleep(random.uniform(DELAY_MIN, DELAY_MAX))
-
-            # --- ANTI-DETECTION LAYER 4d: Organic coffee break pause ---
-            if success_count > 0 and success_count % random.randint(10, 15) == 0:
-                coffee_break = random.uniform(150, 250)
-                print(f"☕ BREAK: User stepped away for {coffee_break / 60:.1f} minutes...")
-                time.sleep(coffee_break)
-
-        # --- ANTI-DETECTION LAYER 4f: Pause between category pages ---
-        if success_count < PRODUCT_TARGET:
-            wait_batch = random.uniform(60, 90)
-            print(f"🏁 Batch complete. Waiting {wait_batch:.0f}s before next category...")
-            time.sleep(wait_batch)
-
-    return []
+    config = PipelineConfig.from_settings(settings)
+    pipeline = SampleArtePipeline(client=client, config=config)
+    return pipeline.run()
