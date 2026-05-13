@@ -130,10 +130,23 @@ def run() -> int:
     Execute main scraping pipeline via SampleArtePipeline.
     Preserves backward compatibility with global settings.
 
+    Auto-generates CSV filename from category URL:
+    - https://www.buscalibre.cl/libros/ficcion → books_ficcion.csv
+    - https://www.buscalibre.cl/libros/arte → books_arte.csv
+
     Returns:
         Number of products successfully scraped and saved.
     """
+    import re
+
     client = HTTPClient()
     config = PipelineConfig.from_settings(settings)
+
+    # Extract category name from URL (e.g., "ficcion" from "/libros/ficcion")
+    match = re.search(r'/libros/([a-z-]+)', config.category_url)
+    if match:
+        category_name = match.group(1)
+        config.output_path = f"storage/outputs/books_{category_name}.csv"
+
     pipeline = SampleArtePipeline(client=client, config=config)
     return pipeline.run()
