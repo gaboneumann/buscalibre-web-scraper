@@ -20,8 +20,9 @@ class HTTPClient:
       preserves the aws-waf-token so the CAPTCHA is only solved once.
     """
 
-    def __init__(self, timeout: int = REQUEST_TIMEOUT):
+    def __init__(self, timeout: int = REQUEST_TIMEOUT, download_strategy=None):
         self.timeout = timeout * 3000  # Convert seconds to ms for Playwright
+        self._strategy = download_strategy
         self._playwright = sync_playwright().start()
         self._browser = self._playwright.chromium.launch(headless=False)
         self._context = None
@@ -95,6 +96,10 @@ class HTTPClient:
             raise ValueError("Endpoint cannot be empty")
 
         url = endpoint if endpoint.startswith("http") else urljoin(DOMAIN_URL, endpoint)
+
+        # Delegate to strategy if provided
+        if self._strategy:
+            return self._strategy.download(url, request_type)
 
         # Only set Referer for product pages — Playwright generates all other headers naturally
         if "/p/" in url or "libro-" in url:
