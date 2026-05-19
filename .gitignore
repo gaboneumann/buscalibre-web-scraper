@@ -66,15 +66,19 @@ data/output/
 *.bak
 *.log
 
-# ===== AI Tools =====
+# ===== AI Tools & Claude Ecosystem =====
 .claude/
 .claude.json
 .claude.json.backup
 .cline/
 .copilot/
 .agents/
+.atl/
+openspec/
 tmpclaude-*.cwd
 CLAUDE.md
+*_DRAFT.md
+docs/feature_update.md
 
 # ===== Project Specific =====
 ROADMAP_PROJECT.md
