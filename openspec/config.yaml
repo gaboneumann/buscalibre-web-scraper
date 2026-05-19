@@ -1,0 +1,19 @@
+project:
+  name: Buscalibre Web Scraper
+  stack: Python / Pytest
+  testing:
+    runner: pytest
+    command: pytest {path} -v
+
+# TDD configuration: specify which phases require Strict TDD mode
+# Only phases listed here will follow strict-tdd.md (test-first cycle)
+# All other phases use standard implementation (code directly from specs)
+strict_tdd_phases:
+  - parsing      # Parser tests are critical (product details, links)
+  # - client     # (disabled) HTTP client is simple, anti-detection is baked in
+  # - pipeline   # (disabled) Pipeline orchestration doesn't need TDD
+  # - storage    # (disabled) CSV writer is straightforward
+
+rules:
+  apply:
+    test_command: pytest {path} -v -m "not network"
