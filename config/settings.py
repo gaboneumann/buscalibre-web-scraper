@@ -11,23 +11,30 @@
 #   config = PipelineConfig.from_settings(settings)
 #   pipeline = SampleArtePipeline(client=client, config=config)
 
-DOMAIN_URL = 'https://www.buscalibre.cl/'
-CATEGORY_URL = 'https://www.buscalibre.cl/libros/arte'
+DOMAIN_URL = "https://www.buscalibre.cl/"
+CATEGORY_URL = "https://www.buscalibre.cl/libros/novela-grafica"
 
 # HTTP request settings
 REQUEST_TIMEOUT = 20
 
 # Rate limiting delays (in seconds) - ANTI-DETECTION: DO NOT REDUCE
-# - Minimum delay between product requests (8-15 seconds)
+# - Normal inter-request delay: 4-8 seconds (happy path)
+# - Recovery delay after error (202/405): 15-25 seconds (post-error backoff)
 # - Coffee breaks every 10-15 products (150-250 seconds)
 # These delays are essential to avoid rate-limiting and detection.
-DELAY_MIN = 8.0
-DELAY_MAX = 15.0
+DELAY_MIN = 4.0
+DELAY_MAX = 8.0
+DELAY_RECOVERY_MIN = 15.0
+DELAY_RECOVERY_MAX = 25.0
 
 # Scraping volume limits
 PRODUCT_TARGET = 100
-PRODUCT_PER_PAGE = 50
+PRODUCT_PER_PAGE = 200
 
 # Data export settings
 SOURCE_NAME = "buscalibre_cl"
-OUTPUT_PATH = "storage/outputs/books_arte.csv" 
+OUTPUT_PATH = "storage/outputs/books_arte.csv"
+
+# Exponential backoff bases (Phase 1: Smart Retry)
+BACKOFF_BASE_HTTP = 6  # HTTP retries: 6s → 12s → 24s
+BACKOFF_BASE_POLICY = 45  # Block policy: 45s → 90s → 180s

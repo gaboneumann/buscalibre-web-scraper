@@ -6,8 +6,12 @@ Browser instance persists across session rotations — CAPTCHA only solved once.
 
 import time
 import random
+from typing import Tuple
 from playwright.sync_api import sync_playwright
-from config.settings import DOMAIN_URL, CATEGORY_URL, REQUEST_TIMEOUT
+from config.settings import (
+    DOMAIN_URL, CATEGORY_URL, REQUEST_TIMEOUT,
+    DELAY_MIN, DELAY_MAX, DELAY_RECOVERY_MIN, DELAY_RECOVERY_MAX
+)
 from config.headers import CHROME_120_UA
 from urllib.parse import urljoin
 
@@ -20,15 +24,36 @@ class HTTPClient:
       preserves the aws-waf-token so the CAPTCHA is only solved once.
     """
 
-    def __init__(self, timeout: int = REQUEST_TIMEOUT, download_strategy=None):
+    def __init__(
+        self,
+        timeout: int = REQUEST_TIMEOUT,
+        download_strategy=None,
+        domain_url: str | None = None,
+        category_url: str | None = None,
+        backoff_base_http: float = 6,
+    ):
         self.timeout = timeout * 3000  # Convert seconds to ms for Playwright
         self._strategy = download_strategy
+        self._domain_url = domain_url or DOMAIN_URL
+        self._category_url = category_url or CATEGORY_URL
+        self._backoff_base_http = backoff_base_http
         self._playwright = sync_playwright().start()
         self._browser = self._playwright.chromium.launch(headless=False)
         self._context = None
         self._page = None
         self._waf_token = None  # Cached across session rotations
+        self._in_recovery = False  # Track if we're in recovery mode (post-error)
         self.reset_session()
+
+    def _get_adaptive_delay(self) -> Tuple[float, float]:
+        """
+        Get adaptive delay range based on recovery state.
+        - Normal: 4-8s (happy path)
+        - Recovery: 15-25s (post-error backoff)
+        """
+        if self._in_recovery:
+            return (DELAY_RECOVERY_MIN, DELAY_RECOVERY_MAX)
+        return (DELAY_MIN, DELAY_MAX)
 
     def reset_session(self):
         """Rotate session identity (new context = new cookies/fingerprint).
@@ -58,10 +83,10 @@ class HTTPClient:
         """
         try:
             time.sleep(random.uniform(2, 4))
-            self._page.goto(DOMAIN_URL, wait_until="networkidle", timeout=self.timeout)
+            self._page.goto(self._domain_url, wait_until="domcontentloaded", timeout=self.timeout)
             time.sleep(random.uniform(4, 6))
 
-            self._page.goto(CATEGORY_URL, wait_until="networkidle", timeout=self.timeout)
+            self._page.goto(self._category_url, wait_until="domcontentloaded", timeout=self.timeout)
 
             if "Human Verification" in self._page.title():
                 print("🧩 CAPTCHA detected — please solve it in the browser window...")
@@ -95,7 +120,7 @@ class HTTPClient:
         if not endpoint:
             raise ValueError("Endpoint cannot be empty")
 
-        url = endpoint if endpoint.startswith("http") else urljoin(DOMAIN_URL, endpoint)
+        url = endpoint if endpoint.startswith("http") else urljoin(self._domain_url, endpoint)
 
         # Delegate to strategy if provided
         if self._strategy:
@@ -104,25 +129,41 @@ class HTTPClient:
         # Only set Referer for product pages — Playwright generates all other headers naturally
         if "/p/" in url or "libro-" in url:
             referers = [
-                f"{DOMAIN_URL}libros/arte",
+                f"{self._domain_url}libros/arte",
                 "https://www.google.com/",
-                DOMAIN_URL,
+                self._domain_url,
                 "https://www.bing.com/"
             ]
             self._page.set_extra_http_headers({"Referer": random.choice(referers)})
 
         try:
-            time.sleep(random.uniform(2.0, 5.0))
+            # Use adaptive delay: 4-8s normal, 15-25s if recovering from error
+            delay_min, delay_max = self._get_adaptive_delay()
+            time.sleep(random.uniform(delay_min, delay_max))
 
-            response = self._page.goto(url, wait_until="networkidle", timeout=self.timeout)
+            response = self._page.goto(url, wait_until="domcontentloaded", timeout=self.timeout)
 
-            # WAF challenge: wait for JS token to settle, then retry once
-            if response.status in (202, 405):
-                print(f"🔑 WAF challenge on {url} — retrying with token...")
-                time.sleep(random.uniform(6, 9))
-                response = self._page.goto(url, wait_until="networkidle", timeout=self.timeout)
+            # WAF challenge: exponential backoff with jitter
+            max_retries = 3
+            backoff_base = self._backoff_base_http
+            for attempt in range(1, max_retries + 1):
+                if response.status in (202, 405):
+                    if attempt < max_retries:
+                        wait_time = backoff_base * (2 ** (attempt - 1))
+                        jitter = random.uniform(-0.2, 0.2) * wait_time
+                        total_wait = wait_time + jitter
+                        print(f"🔄 WAF challenge attempt {attempt}/{max_retries} on {url} — waiting {total_wait:.1f}s")
+                        time.sleep(total_wait)
+                        response = self._page.goto(url, wait_until="domcontentloaded", timeout=self.timeout)
+                    else:
+                        print(f"⛔ WAF BLOCKED ({response.status}) on {url} after {max_retries} retries. Giving up.")
+                        self._in_recovery = True  # Mark for recovery mode
+                        return None
+                else:
+                    break
 
             if response.status == 200:
+                self._in_recovery = False  # Reset recovery flag on success
                 html = self._page.content()
                 if len(html) < 1000:
                     print(f"⚠️ Warning: Short response from {url}")
@@ -130,6 +171,7 @@ class HTTPClient:
 
             if response.status in (202, 405):
                 print(f"⛔ WAF BLOCKED ({response.status}) on {url}. Aborting.")
+                self._in_recovery = True  # Mark for recovery mode
                 return None
 
             print(f"❌ HTTP Error {response.status} on {url}")
@@ -137,6 +179,7 @@ class HTTPClient:
 
         except Exception as e:
             print(f"❌ Connection error: {e}")
+            self._in_recovery = True  # Mark for recovery mode
             return None
 
     def navigate_to_category(self, category_url: str) -> str | None:

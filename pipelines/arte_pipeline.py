@@ -96,10 +96,12 @@ class SampleArtePipeline(BasePipeline):
 
     def _create_orchestrator(self) -> PipelineOrchestrator:
         """Create and configure pipeline orchestrator with policies."""
-        checkpoint_mgr = CheckpointManager(self.config.output_path)
-        session_policy = SessionRotationPolicy()
-        block_policy = BlockDetectionPolicy()
-        delay_policy = DelayPolicy(
+        checkpoint_mgr = CheckpointManager(self.config.output_path, category_url=self.config.category_url)
+        session_policy = self.config.session_policy or SessionRotationPolicy()
+        block_policy = self.config.block_policy or BlockDetectionPolicy(
+            backoff_base=45  # Exponential backoff base: 45s → 90s → 180s
+        )
+        delay_policy = self.config.delay_policy or DelayPolicy(
             delay_min=self.config.delay_min,
             delay_max=self.config.delay_max,
         )
@@ -139,8 +141,11 @@ def run() -> int:
     """
     import re
 
-    client = HTTPClient()
     config = PipelineConfig.from_settings(settings)
+    client = HTTPClient(
+        domain_url=config.domain_url,
+        category_url=config.category_url,
+    )
 
     # Extract category name from URL (e.g., "ficcion" from "/libros/ficcion")
     match = re.search(r'/libros/([a-z-]+)', config.category_url)
