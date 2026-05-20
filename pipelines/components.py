@@ -1,9 +1,13 @@
 """Core ETL pipeline components: Policies and Orchestrator."""
+import logging
 import random
 import time
 from typing import Tuple, Optional, Dict, List, Callable
 from config import settings
+from config.logging_config import SUCCESS
 from pipelines.schema import CheckpointManager
+
+logger = logging.getLogger(__name__)
 
 
 class SessionRotationPolicy:
@@ -115,7 +119,7 @@ class BlockDetectionPolicy:
         # Use exponential backoff instead of uniform
         wait_time = self.get_backoff_wait(self._consecutive_failures)
 
-        print(f"📊 BLOCK POLICY: failure {self._consecutive_failures}/{self._threshold}, waiting {wait_time:.1f}s (exponential)")
+        logger.warning("BLOCK POLICY: failure %s/%s, waiting %.1fs (exponential)", self._consecutive_failures, self._threshold, wait_time)
         return (should_abort, wait_time)
 
 
@@ -218,7 +222,7 @@ class PipelineOrchestrator:
 
         success_count = len(scraped_urls)
         if success_count > 0:
-            print(f"📋 Resuming from checkpoint: {success_count}/{self.config.product_target} already scraped.")
+            logger.info("Resuming from checkpoint: %s/%s already scraped.", success_count, self.config.product_target)
 
         books_in_session = 0
         blocks_in_batch = 0
@@ -226,7 +230,7 @@ class PipelineOrchestrator:
         page_index = 1
 
         while success_count < self.config.product_target:
-            print(f"\n--- 📑 BATCH: Category Page {page_index} ---")
+            logger.info("BATCH: Category Page %s", page_index)
             self.client.reset_session()
 
             page_url = build_page(self.config.category_url, page_index)
@@ -240,7 +244,7 @@ class PipelineOrchestrator:
                 blocks_in_batch += 1
                 should_abort, _ = self.block_policy.on_failure()
                 if should_abort:
-                    print("🚨 AUTO-STOP: Persistent category page blocking. Aborting.")
+                    logger.error("AUTO-STOP: Persistent category page blocking. Aborting.")
                     return success_count
                 continue
 
@@ -249,7 +253,7 @@ class PipelineOrchestrator:
             successful_in_batch += 1
 
             random.shuffle(links)
-            print(f"🔀 Links on page {page_index} shuffled.")
+            logger.debug("Links on page %s shuffled.", page_index)
 
             for link in links:
                 if success_count >= self.config.product_target:
@@ -262,24 +266,24 @@ class PipelineOrchestrator:
                 # Session rotation check
                 if self.session_policy.should_rotate(books_in_session):
                     wait_min, wait_max = self.session_policy.on_rotation()
-                    print(f"♻️ Random rotation (threshold reached): Resetting session...")
+                    logger.info("Random rotation (threshold reached): Resetting session...")
                     self.client.reset_session()
                     books_in_session = 0
                     time.sleep(random.uniform(wait_min, wait_max))
-                    print(f"📂 [Post-rotation cascade] Re-navigating to category...")
+                    logger.debug("[Post-rotation cascade] Re-navigating to category...")
                     self.client.get(build_page(self.config.category_url, page_index), request_type="category")
                     time.sleep(random.uniform(5, 10))
 
-                print(f"🔍 [{success_count + 1}/{self.config.product_target}] Extracting: {full_link}")
+                logger.info("[%s/%s] Extracting: %s", success_count + 1, self.config.product_target, full_link)
                 html_prod = self.client.get(full_link, request_type="product")
 
                 if html_prod is None:
                     blocks_in_batch += 1
                     should_abort, wait_time = self.block_policy.on_failure()
-                    print(f"⛔ 202 block detected.")
+                    logger.warning("202 block detected.")
 
                     if should_abort:
-                        print("🚨 AUTO-STOP: Too many consecutive blocks.")
+                        logger.error("AUTO-STOP: Too many consecutive blocks.")
                         return success_count
 
                     time.sleep(wait_time)
@@ -305,35 +309,35 @@ class PipelineOrchestrator:
                     success_count += 1
                     books_in_session += 1
                     successful_in_batch += 1
-                    print(f"✅ Saved: {record['title'][:30]}")
+                    logger.log(SUCCESS, "Saved: %s", record['title'][:30])
 
                 self.delay_policy.wait_between_products()
 
                 # Coffee break logic
                 if self.delay_policy.should_take_coffee_break(success_count):
-                    print(f"☕ BREAK: User stepped away for a bit...")
+                    logger.info("BREAK: User stepped away for a bit...")
                     self.delay_policy.wait_coffee_break()
 
-            print(f"📊 BATCH SUMMARY: {successful_in_batch} success, {blocks_in_batch} blocks")
+            logger.info("BATCH SUMMARY: %s success, %s blocks", successful_in_batch, blocks_in_batch)
 
             # Dynamic adaptation based on batch results
             if blocks_in_batch >= 2:
-                print(f"⚠️  TRIGGERS: {blocks_in_batch} bloques detectados, reduciendo PRODUCT_PER_PAGE...")
+                logger.warning("TRIGGERS: %s bloques detectados, reduciendo PRODUCT_PER_PAGE...", blocks_in_batch)
                 self.config.adapt_product_per_page(0.85)  # -15%
             elif successful_in_batch >= 10 and blocks_in_batch == 0:
-                print(f"✅ TRIGGERS: {successful_in_batch} sucessos sin bloques, aumentando PRODUCT_PER_PAGE...")
+                logger.info("TRIGGERS: %s sucessos sin bloques, aumentando PRODUCT_PER_PAGE...", successful_in_batch)
                 self.config.adapt_product_per_page(1.10)  # +10%
 
             # Move to next page if not yet at target
             if success_count < self.config.product_target:
                 page_index += 1
                 wait_batch = random.uniform(60, 90)
-                print(f"🏁 Batch complete. Waiting {wait_batch:.0f}s before next page...")
+                logger.info("Batch complete. Waiting %.0fs before next page...", wait_batch)
                 time.sleep(wait_batch)
 
             # Reset batch counters for next iteration
             blocks_in_batch = 0
             successful_in_batch = 0
 
-        print(f"🏁 Process completed. Reached {success_count} products.")
+        logger.info("Process completed. Reached %s products.", success_count)
         return success_count
