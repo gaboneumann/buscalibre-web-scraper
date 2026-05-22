@@ -1,7 +1,10 @@
 """CSV schema validation and checkpoint management."""
 import csv
+import logging
 import os
 from typing import Set, Dict, List
+
+logger = logging.getLogger(__name__)
 
 
 class CSVSchema:
@@ -88,7 +91,7 @@ class CheckpointManager:
                         if url:
                             scraped_urls.add(url.strip())
         except Exception as e:
-            print(f"⚠️ WARNING: Could not read checkpoint file: {e}")
+            logger.warning("Could not read checkpoint file: %s", e)
         return scraped_urls
 
     def save_record(self, record: Dict) -> None:

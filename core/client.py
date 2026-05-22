@@ -4,6 +4,7 @@ Uses a real Chromium browser to solve AWS WAF JS challenges automatically.
 Browser instance persists across session rotations — CAPTCHA only solved once.
 """
 
+import logging
 import time
 import random
 from typing import Tuple
@@ -14,6 +15,8 @@ from config.settings import (
 )
 from config.headers import CHROME_120_UA
 from urllib.parse import urljoin
+
+logger = logging.getLogger(__name__)
 
 
 class HTTPClient:
@@ -89,12 +92,12 @@ class HTTPClient:
             self._page.goto(self._category_url, wait_until="domcontentloaded", timeout=self.timeout)
 
             if "Human Verification" in self._page.title():
-                print("🧩 CAPTCHA detected — please solve it in the browser window...")
+                logger.warning("CAPTCHA detected — please solve it in the browser window...")
                 self._page.wait_for_function(
                     "document.title !== 'Human Verification'",
                     timeout=180000
                 )
-                print("✅ CAPTCHA solved!")
+                logger.info("CAPTCHA solved!")
 
             # Cache WAF token for next rotation
             cookies = self._context.cookies()
@@ -102,9 +105,9 @@ class HTTPClient:
             if waf:
                 self._waf_token = waf
 
-            print("✅ Session initialized.")
+            logger.debug("Session initialized.")
         except Exception as e:
-            print(f"⚠️ WARNING: Could not initialize session: {e}")
+            logger.warning("Could not initialize session: %s", e)
 
     def get(self, endpoint: str, request_type: str = "product") -> str | None:
         """
@@ -152,11 +155,11 @@ class HTTPClient:
                         wait_time = backoff_base * (2 ** (attempt - 1))
                         jitter = random.uniform(-0.2, 0.2) * wait_time
                         total_wait = wait_time + jitter
-                        print(f"🔄 WAF challenge attempt {attempt}/{max_retries} on {url} — waiting {total_wait:.1f}s")
+                        logger.warning("WAF challenge attempt %s/%s on %s — waiting %.1fs", attempt, max_retries, url, total_wait)
                         time.sleep(total_wait)
                         response = self._page.goto(url, wait_until="domcontentloaded", timeout=self.timeout)
                     else:
-                        print(f"⛔ WAF BLOCKED ({response.status}) on {url} after {max_retries} retries. Giving up.")
+                        logger.error("WAF BLOCKED (%s) on %s after %s retries. Giving up.", response.status, url, max_retries)
                         self._in_recovery = True  # Mark for recovery mode
                         return None
                 else:
@@ -166,29 +169,29 @@ class HTTPClient:
                 self._in_recovery = False  # Reset recovery flag on success
                 html = self._page.content()
                 if len(html) < 1000:
-                    print(f"⚠️ Warning: Short response from {url}")
+                    logger.warning("Short response from %s", url)
                 return html
 
             if response.status in (202, 405):
-                print(f"⛔ WAF BLOCKED ({response.status}) on {url}. Aborting.")
+                logger.error("WAF BLOCKED (%s) on %s. Aborting.", response.status, url)
                 self._in_recovery = True  # Mark for recovery mode
                 return None
 
-            print(f"❌ HTTP Error {response.status} on {url}")
+            logger.error("HTTP Error %s on %s", response.status, url)
             return None
 
         except Exception as e:
-            print(f"❌ Connection error: {e}")
+            logger.error("Connection error: %s", e)
             self._in_recovery = True  # Mark for recovery mode
             return None
 
     def navigate_to_category(self, category_url: str) -> str | None:
         """Cascade navigation: Home → Category."""
         try:
-            print("🏠 [Cascade] Already at home")
-            print(f"📂 [Cascade] Navigating to category: {category_url}")
+            logger.debug("[Cascade] Already at home")
+            logger.debug("[Cascade] Navigating to category: %s", category_url)
             time.sleep(random.uniform(3, 6))
             return self.get(category_url, request_type="category")
         except Exception as e:
-            print(f"❌ Cascade navigation error: {e}")
+            logger.error("Cascade navigation error: %s", e)
             return None

@@ -1,5 +1,9 @@
 """PipelineConfig: Dependency injection configuration object for ETL pipelines."""
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class PipelineConfig:
     """Configuration container for pipeline execution.
@@ -96,7 +100,7 @@ class PipelineConfig:
         self.product_per_page = new_value
 
         if old_value != new_value:
-            print(f"🎯 ADAPT PRODUCT_PER_PAGE: {old_value} → {new_value} (factor={factor:.2f})")
+            logger.info("ADAPT PRODUCT_PER_PAGE: %s → %s (factor=%.2f)", old_value, new_value, factor)
 
         return new_value
 
