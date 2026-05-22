@@ -1,6 +1,6 @@
 # Technical Documentation — BuscaLibre Web Scraper
 
-Full architecture and implementation detail. See [docs/README.md](README.md) for documentation index and quick links.
+Full architecture and implementation detail. See the project [README.md](../README.md) for an overview and quick start.
 
 ---
 
@@ -115,7 +115,7 @@ def _rotate_context(self):
     if self._waf_token:
         self._context.add_cookies([self._waf_token])  # Restore token
 
-# arte_pipeline.py
+# category_pipeline.py
 if books_in_session >= reset_threshold:
     client.reset_session()
     books_in_session = 0
@@ -134,10 +134,10 @@ Six randomness points, each independent:
 |---|---|---|
 | 4a: Warm-up jitter | `_initialize_session()` | 2–4s before navigating home |
 | 4b: Pre-request jitter | `client.get()` | 2–5s before each `page.goto()` |
-| 4c: Main delay | `arte_pipeline.py` | 8–15s between products (PRIMARY) |
-| 4d: Coffee break | `arte_pipeline.py` | 150–250s every 10–15 books |
-| 4e: Post-block recovery | `arte_pipeline.py` | 45–70s after 202 |
-| 4f: Page pause | `arte_pipeline.py` | 60–90s between category pages |
+| 4c: Main delay | `category_pipeline.py` | 8–15s between products (PRIMARY) |
+| 4d: Coffee break | `category_pipeline.py` | 150–250s every 10–15 books |
+| 4e: Post-block recovery | `category_pipeline.py` | 45–70s after 202 |
+| 4f: Page pause | `category_pipeline.py` | 60–90s between category pages |
 
 Result: temporal pattern impossible to model.
 
@@ -176,7 +176,7 @@ After every context rotation, the scraper re-visits the category page before the
 ### Layer 7: Shuffling + Deduplication Checkpoint
 
 ```python
-# arte_pipeline.py
+# category_pipeline.py
 random.shuffle(links)  # Break sequential pattern
 
 scraped_urls = get_scraped_urls()
@@ -205,7 +205,7 @@ buscalibre-web-scraper/
 │   └── paginator.py                   # Build pagination URLs
 │
 ├── pipelines/
-│   └── arte_pipeline.py               # Orchestrator with human delays
+│   └── category_pipeline.py               # Orchestrator with human delays
 │
 ├── storage/
 │   └── outputs/                       # Generated CSV output files
@@ -220,7 +220,7 @@ buscalibre-web-scraper/
 │   ├── paginator/
 │   │   └── test_paginator.py
 │   ├── pipelines/
-│   │   └── test_arte_pipeline_integration.py
+│   │   └── test_category_pipeline_integration.py
 │   ├── fixtures/products/             # HTML fixtures for parser tests
 │   ├── test_parser.py
 │   └── test_product_integration.py
@@ -266,7 +266,7 @@ pytest tests/ --cov=. --cov-report=term-missing
 | `core/parser.py` | Valid links, empty HTML, malformed HTML |
 | `core/parser_product.py` | Title, author, price, stock extraction |
 | `core/paginator.py` | Pagination URL construction |
-| `pipelines/arte_pipeline.py` | Full simulated flow |
+| `pipelines/category_pipeline.py` | Full simulated flow |
 
 `core/client.py` is not unit-tested — it requires a live Playwright browser. Covered by the pipeline integration test.
 

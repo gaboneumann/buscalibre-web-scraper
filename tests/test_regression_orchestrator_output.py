@@ -3,7 +3,7 @@ import pytest
 import csv
 from pathlib import Path
 from unittest.mock import MagicMock, patch
-from pipelines.arte_pipeline import SampleArtePipeline
+from pipelines.category_pipeline import CategoryPipeline
 from pipelines.config import PipelineConfig
 from pipelines.strategies import NoOpStrategy
 from core.client import HTTPClient
@@ -44,7 +44,7 @@ class TestOrchestratorRegressionOutput:
         """CSV output includes all required columns."""
         with patch('core.client.sync_playwright'):
             client = HTTPClient(download_strategy=test_config.download_strategy)
-            pipeline = SampleArtePipeline(client=client, config=test_config)
+            pipeline = CategoryPipeline(client=client, config=test_config)
             pipeline.run()
 
             csv_file = Path(test_config.output_path)
@@ -64,7 +64,7 @@ class TestOrchestratorRegressionOutput:
         """CSV columns are in correct order."""
         with patch('core.client.sync_playwright'):
             client = HTTPClient(download_strategy=test_config.download_strategy)
-            pipeline = SampleArtePipeline(client=client, config=test_config)
+            pipeline = CategoryPipeline(client=client, config=test_config)
             pipeline.run()
 
             csv_file = Path(test_config.output_path)
@@ -81,7 +81,7 @@ class TestOrchestratorRegressionOutput:
         """Orchestrator policies use correct anti-detection thresholds."""
         with patch('core.client.sync_playwright'):
             client = MagicMock()
-            pipeline = SampleArtePipeline(client=client, config=test_config)
+            pipeline = CategoryPipeline(client=client, config=test_config)
 
             # Check that policies in orchestrator have correct thresholds
             from pipelines.components import (
@@ -109,7 +109,7 @@ class TestOrchestratorRegressionOutput:
         """CSV data contains correct types (stock as boolean, etc.)."""
         with patch('core.client.sync_playwright'):
             client = HTTPClient(download_strategy=test_config.download_strategy)
-            pipeline = SampleArtePipeline(client=client, config=test_config)
+            pipeline = CategoryPipeline(client=client, config=test_config)
             pipeline.run()
 
             csv_file = Path(test_config.output_path)

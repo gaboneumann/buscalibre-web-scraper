@@ -11,11 +11,14 @@ Usage:
 
 import argparse
 import json
-from pipelines.arte_pipeline import run
+import logging
+from pipelines.category_pipeline import run, CategoryPipeline
 from pipelines.config import PipelineConfig
 from core.client import HTTPClient
-from pipelines.arte_pipeline import SampleArtePipeline
 from config import settings
+from config.logging_config import setup_logging
+
+logger = logging.getLogger(__name__)
 
 
 def main(config=None):
@@ -24,21 +27,22 @@ def main(config=None):
     Args:
         config: Optional PipelineConfig instance. If None, loads from settings.
     """
-    print("🚀 Starting book extraction process...")
+    setup_logging()
+    logger.info("Starting book extraction process...")
 
     try:
         if config:
             # Use provided config (for advanced usage)
             client = HTTPClient(download_strategy=config.download_strategy)
-            pipeline = SampleArtePipeline(client=client, config=config)
+            pipeline = CategoryPipeline(client=client, config=config)
             count = pipeline.run()
-            print(f"🏁 Process completed. Scraped {count} products.")
+            logger.info("Process completed. Scraped %s products.", count)
         else:
-            # Use default from_settings (backward compatible)
+            # Use default from_settings
             count = run()
-            print("🏁 Process completed.")
+            logger.info("Process completed.")
     except Exception as e:
-        print(f"❌ Critical error during execution: {e}")
+        logger.error("Critical error during execution: %s", e, exc_info=True)
 
 
 if __name__ == "__main__":

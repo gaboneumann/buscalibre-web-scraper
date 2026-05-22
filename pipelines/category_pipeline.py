@@ -1,11 +1,14 @@
 """
-Main scraping pipeline orchestrator for BuscaLibre Art Books Category.
+Generic scraping pipeline orchestrator for BuscaLibre book categories.
 Implements two-level nested iteration with streaming CSV writes.
 """
 
 import csv
+import logging
 import os
 from typing import List, Dict, Optional
+
+logger = logging.getLogger(__name__)
 
 from core.client import HTTPClient
 from core.parser import parse_product_links
@@ -68,13 +71,13 @@ def get_scraped_urls() -> set:
                 if url:
                     scraped_urls.add(url.strip())
     except Exception as e:
-        print(f"⚠️ WARNING: Could not read checkpoint file: {e}")
+        logger.warning("Could not read checkpoint file: %s", e)
     return scraped_urls
 
 
-class SampleArtePipeline(BasePipeline):
+class CategoryPipeline(BasePipeline):
     """
-    Buscalibre Art Books scraper implementing two-level nested iteration
+    Generic Buscalibre category scraper implementing two-level nested iteration
     with streaming CSV writes and anti-detection layers.
     """
 
@@ -129,8 +132,8 @@ class SampleArtePipeline(BasePipeline):
 
 def run() -> int:
     """
-    Execute main scraping pipeline via SampleArtePipeline.
-    Preserves backward compatibility with global settings.
+    Execute main scraping pipeline via CategoryPipeline.
+    Loads configuration from global settings.
 
     Auto-generates CSV filename from category URL:
     - https://www.buscalibre.cl/libros/ficcion → books_ficcion.csv
@@ -153,5 +156,5 @@ def run() -> int:
         category_name = match.group(1)
         config.output_path = f"storage/outputs/books_{category_name}.csv"
 
-    pipeline = SampleArtePipeline(client=client, config=config)
+    pipeline = CategoryPipeline(client=client, config=config)
     return pipeline.run()

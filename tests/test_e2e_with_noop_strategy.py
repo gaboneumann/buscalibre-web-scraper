@@ -5,7 +5,7 @@ import os
 import time
 from pathlib import Path
 from unittest.mock import MagicMock, patch
-from pipelines.arte_pipeline import SampleArtePipeline
+from pipelines.category_pipeline import CategoryPipeline
 from pipelines.config import PipelineConfig
 from pipelines.strategies import NoOpStrategy
 from core.client import HTTPClient
@@ -46,7 +46,7 @@ class TestE2EWithNoOpStrategy:
         """Full pipeline with NoOpStrategy completes in <5 seconds."""
         with patch('core.client.sync_playwright'):
             client = HTTPClient(download_strategy=test_config.download_strategy)
-            pipeline = SampleArtePipeline(client=client, config=test_config)
+            pipeline = CategoryPipeline(client=client, config=test_config)
 
             start = time.time()
             result = pipeline.run()
@@ -61,7 +61,7 @@ class TestE2EWithNoOpStrategy:
         """Pipeline with NoOpStrategy creates CSV file."""
         with patch('core.client.sync_playwright'):
             client = HTTPClient(download_strategy=test_config.download_strategy)
-            pipeline = SampleArtePipeline(client=client, config=test_config)
+            pipeline = CategoryPipeline(client=client, config=test_config)
 
             pipeline.run()
 
@@ -73,7 +73,7 @@ class TestE2EWithNoOpStrategy:
         """Pipeline with NoOpStrategy creates CSV with correct headers."""
         with patch('core.client.sync_playwright'):
             client = HTTPClient(download_strategy=test_config.download_strategy)
-            pipeline = SampleArtePipeline(client=client, config=test_config)
+            pipeline = CategoryPipeline(client=client, config=test_config)
 
             pipeline.run()
 
@@ -92,7 +92,7 @@ class TestE2EWithNoOpStrategy:
 
         with patch('core.client.sync_playwright'):
             client = HTTPClient(download_strategy=test_config.download_strategy)
-            pipeline = SampleArtePipeline(client=client, config=test_config)
+            pipeline = CategoryPipeline(client=client, config=test_config)
 
             result = pipeline.run()
 
@@ -104,13 +104,13 @@ class TestE2EWithNoOpStrategy:
         # First run
         with patch('core.client.sync_playwright'):
             client = HTTPClient(download_strategy=test_config.download_strategy)
-            pipeline = SampleArtePipeline(client=client, config=test_config)
+            pipeline = CategoryPipeline(client=client, config=test_config)
             first_result = pipeline.run()
 
         # Second run should resume
         with patch('core.client.sync_playwright'):
             client2 = HTTPClient(download_strategy=test_config.download_strategy)
-            pipeline2 = SampleArtePipeline(client=client2, config=test_config)
+            pipeline2 = CategoryPipeline(client=client2, config=test_config)
             second_result = pipeline2.run()
 
             # Second run should not increase total (already at target or file exists)

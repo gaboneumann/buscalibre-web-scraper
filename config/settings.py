@@ -9,7 +9,7 @@
 #   from config import settings
 #   from pipelines.config import PipelineConfig
 #   config = PipelineConfig.from_settings(settings)
-#   pipeline = SampleArtePipeline(client=client, config=config)
+#   pipeline = CategoryPipeline(client=client, config=config)
 
 DOMAIN_URL = "https://www.buscalibre.cl/"
 CATEGORY_URL = "https://www.buscalibre.cl/libros/novela-grafica"

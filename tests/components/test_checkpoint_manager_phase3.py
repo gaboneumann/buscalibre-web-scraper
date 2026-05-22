@@ -207,7 +207,7 @@ class TestCheckpointManagerIntegration:
     """Integration tests for CheckpointManager CSV format compatibility."""
 
     def test_csv_output_format_matches_original(self, tmp_path):
-        """CheckpointManager output CSV matches original arte_pipeline format."""
+        """CheckpointManager output CSV matches original category_pipeline format."""
         csv_file = tmp_path / "output.csv"
         mgr = CheckpointManager(output_path=str(csv_file), category_url=CATEGORY_URL)
 

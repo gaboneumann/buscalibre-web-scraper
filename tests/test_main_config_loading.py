@@ -4,7 +4,7 @@ import json
 import tempfile
 from pathlib import Path
 from unittest.mock import patch, MagicMock
-from pipelines.arte_pipeline import run
+from pipelines.category_pipeline import run
 from pipelines.config import PipelineConfig
 
 
@@ -12,10 +12,13 @@ class TestMainConfigLoading:
     """Test main.py supports explicit PipelineConfig."""
 
     def test_run_function_accepts_no_args_uses_from_settings(self):
-        """run() without arguments uses from_settings() (backward compat)."""
-        with patch('pipelines.arte_pipeline.HTTPClient'):
-            with patch('pipelines.arte_pipeline.SampleArtePipeline.run') as mock_run:
-                with patch('pipelines.config.PipelineConfig.from_settings'):
+        """run() without arguments uses from_settings()."""
+        with patch('pipelines.category_pipeline.HTTPClient'):
+            with patch('pipelines.category_pipeline.CategoryPipeline.run') as mock_run:
+                with patch('pipelines.config.PipelineConfig.from_settings') as mock_from_settings:
+                    mock_config = MagicMock()
+                    mock_config.category_url = "https://www.buscalibre.cl/libros/test-category"
+                    mock_from_settings.return_value = mock_config
                     mock_run.return_value = 10
                     result = run()
                     assert result == 10
@@ -101,11 +104,11 @@ class TestMainConfigLoading:
 
         # Should be able to pass config to pipeline
         with patch('core.client.HTTPClient'):
-            with patch('pipelines.arte_pipeline.SampleArtePipeline.run') as mock_run:
-                from pipelines.arte_pipeline import SampleArtePipeline
+            with patch('pipelines.category_pipeline.CategoryPipeline.run') as mock_run:
+                from pipelines.category_pipeline import CategoryPipeline
                 mock_run.return_value = 5
 
-                pipeline = SampleArtePipeline(
+                pipeline = CategoryPipeline(
                     client=MagicMock(),
                     config=config
                 )

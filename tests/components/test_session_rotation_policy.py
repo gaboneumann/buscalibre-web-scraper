@@ -35,10 +35,10 @@ class TestSessionRotationPolicy:
         assert wait_max > wait_min
 
     def test_on_rotation_wait_range_matches_design(self):
-        """on_rotation() returns 10-15s range (from arte_pipeline design)."""
+        """on_rotation() returns 10-15s range (from category_pipeline design)."""
         policy = SessionRotationPolicy(threshold=3)
         wait_min, wait_max = policy.on_rotation()
-        # From arte_pipeline.py line 154: time.sleep(random.uniform(10, 15))
+        # From category_pipeline design: time.sleep(random.uniform(10, 15))
         assert wait_min == 10
         assert wait_max == 15
 
@@ -48,22 +48,22 @@ class TestSessionRotationPolicy:
         assert policy.should_rotate(products_in_session=2) is True
 
     def test_init_with_random_threshold_in_valid_range(self):
-        """SessionRotationPolicy init with random=True generates 2-4 threshold."""
+        """SessionRotationPolicy init with random=True generates 10-15 threshold."""
         # Run multiple times to check randomness is within bounds
         thresholds = []
         for _ in range(10):
             policy = SessionRotationPolicy(random_threshold=True)
             threshold = policy._threshold
-            assert 2 <= threshold <= 4
+            assert 10 <= threshold <= 15
             thresholds.append(threshold)
         # Should see some variation (not all same threshold)
         assert len(set(thresholds)) > 1
 
-    def test_default_threshold_is_random_2_to_4(self):
-        """SessionRotationPolicy defaults to random threshold 2-4 when not specified."""
+    def test_default_threshold_is_random_10_to_15(self):
+        """SessionRotationPolicy defaults to random threshold 10-15 when not specified."""
         policy = SessionRotationPolicy()
         threshold = policy._threshold
-        assert 2 <= threshold <= 4
+        assert 10 <= threshold <= 15
 
     def test_on_rotation_returns_custom_wait_times(self):
         """on_rotation() returns custom rotation_wait_min/max when provided."""
