@@ -46,7 +46,7 @@ BuscaLibre uses **AWS WAF** with two challenge types: `challenge.js` (auto-resol
 | CAPTCHA | Not handled | Not handled | **Solved once, token cached** |
 | Sec-Fetch headers | Static `"none"` | Dynamic by context | **Automatic (real browser)** |
 | Context rotation | Every 50–100 (fixed) | Every 2–4 (random) | **Policy-based (10–15 products)** |
-| Delays | 10–20s | 30–55s + jitter | **8–15s + coffee breaks (150–250s)** |
+| Delays | 10–20s | 30–55s + jitter | **4–8s + coffee breaks (150–250s)** |
 | Block handling | Fixed retry | Fixed wait | **Exponential backoff (45s → 90s → 180s)** |
 | 202 rate | 70% | 0% | **0%** |
 
@@ -126,8 +126,8 @@ python main.py                       # run (solve the CAPTCHA when the browser o
 DOMAIN_URL = "https://www.buscalibre.cl/"
 CATEGORY_URL = "https://www.buscalibre.cl/libros/arte"
 PRODUCT_TARGET = 100
-DELAY_MIN = 8.0
-DELAY_MAX = 15.0
+DELAY_MIN = 4.0
+DELAY_MAX = 8.0
 SOURCE_NAME = "buscalibre_cl"
 OUTPUT_PATH = "storage/outputs/books.csv"
 ```
@@ -148,8 +148,8 @@ python main.py --config config.json --target 150     # Combine both
   "category_url": "https://www.buscalibre.cl/libros/arte",
   "product_target": 100,
   "product_per_page": 50,
-  "delay_min": 8.0,
-  "delay_max": 15.0,
+  "delay_min": 4.0,
+  "delay_max": 8.0,
   "source_name": "buscalibre_cl",
   "output_path": "storage/outputs/books.csv"
 }
@@ -222,7 +222,7 @@ The scraper implements a **pluggable web crawler architecture** with intelligent
 - **Purpose:** Respect rate limits and gracefully abort when blocked
 
 #### Delay Policy
-- **Inter-request:** 8–15 seconds (randomized)
+- **Inter-request:** 4–8 seconds (randomized)
 - **Coffee breaks:** Every 10–15 products, sleep 150–250 seconds (2.5–4.2 min)
 - **Purpose:** Human-like behavior, avoid pattern detection
 
