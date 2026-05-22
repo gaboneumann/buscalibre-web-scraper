@@ -23,9 +23,9 @@ BuscaLibre uses **AWS WAF** with two challenge types: `challenge.js` (auto-resol
 
 | Metric | Value |
 | :------ | ----: |
-| Books extracted | 100 |
-| Success rate | **98%+** |
-| Execution time | ~30–45 min |
+| Books extracted | **600** across 5 categories |
+| Categories tested | arte, tecnología, matemáticas, deportes, novela-gráfica |
+| Success rate | **100%** |
 | 202 blocks | **0** |
 | Anti-detection layers | 7 |
 | Web crawler execution | Sequential two-level (categories → products) |
