@@ -133,6 +133,12 @@ class DelayPolicy:
         coffee_break_interval: Optional[int] = None,
         coffee_break_min: float = 150,
         coffee_break_max: float = 250,
+        page_wait_min: float = 60,
+        page_wait_max: float = 90,
+        rotation_wait_min: float = 10,
+        rotation_wait_max: float = 15,
+        post_rotation_wait_min: float = 5,
+        post_rotation_wait_max: float = 10,
     ):
         """
         Initialize delay policy.
@@ -143,12 +149,24 @@ class DelayPolicy:
             coffee_break_interval: Products between coffee breaks (randomized 10-15).
             coffee_break_min: Minimum coffee break duration in seconds.
             coffee_break_max: Maximum coffee break duration in seconds.
+            page_wait_min: Minimum wait between category pages in seconds (default 60).
+            page_wait_max: Maximum wait between category pages in seconds (default 90).
+            rotation_wait_min: Minimum wait after session rotation in seconds (default 10).
+            rotation_wait_max: Maximum wait after session rotation in seconds (default 15).
+            post_rotation_wait_min: Minimum post-rotation cascade wait in seconds (default 5).
+            post_rotation_wait_max: Maximum post-rotation cascade wait in seconds (default 10).
         """
         self._delay_min = delay_min or getattr(settings, 'DELAY_MIN', 30)
         self._delay_max = delay_max or getattr(settings, 'DELAY_MAX', 55)
         self._coffee_break_interval = coffee_break_interval or random.randint(10, 15)
         self._coffee_break_min = coffee_break_min
         self._coffee_break_max = coffee_break_max
+        self._page_wait_min = page_wait_min
+        self._page_wait_max = page_wait_max
+        self._rotation_wait_min = rotation_wait_min
+        self._rotation_wait_max = rotation_wait_max
+        self._post_rotation_wait_min = post_rotation_wait_min
+        self._post_rotation_wait_max = post_rotation_wait_max
 
     def wait_between_products(self) -> None:
         """Sleep for delay_min to delay_max seconds between product requests."""
@@ -171,6 +189,29 @@ class DelayPolicy:
         """Sleep for coffee_break_min to coffee_break_max seconds during coffee break."""
         sleep_time = random.uniform(self._coffee_break_min, self._coffee_break_max)
         time.sleep(sleep_time)
+
+    def wait_between_pages(self) -> None:
+        """Sleep for page_wait_min to page_wait_max seconds between category pages."""
+        sleep_time = random.uniform(self._page_wait_min, self._page_wait_max)
+        time.sleep(sleep_time)
+
+    def wait_session_rotation(self) -> None:
+        """Sleep for rotation_wait_min to rotation_wait_max seconds after session rotation."""
+        sleep_time = random.uniform(self._rotation_wait_min, self._rotation_wait_max)
+        time.sleep(sleep_time)
+
+    def wait_post_rotation(self) -> None:
+        """Sleep for post_rotation_wait_min to post_rotation_wait_max seconds after re-navigation."""
+        sleep_time = random.uniform(self._post_rotation_wait_min, self._post_rotation_wait_max)
+        time.sleep(sleep_time)
+
+    def wait_block_backoff(self, wait_time: float) -> None:
+        """Sleep for wait_time seconds as block backoff (pre-computed by BlockDetectionPolicy).
+
+        Args:
+            wait_time: Duration in seconds supplied by block_policy.get_backoff_wait().
+        """
+        time.sleep(wait_time)
 
 
 class PipelineOrchestrator:
@@ -265,14 +306,13 @@ class PipelineOrchestrator:
 
                 # Session rotation check
                 if self.session_policy.should_rotate(books_in_session):
-                    wait_min, wait_max = self.session_policy.on_rotation()
                     logger.info("Random rotation (threshold reached): Resetting session...")
                     self.client.reset_session()
                     books_in_session = 0
-                    time.sleep(random.uniform(wait_min, wait_max))
+                    self.delay_policy.wait_session_rotation()
                     logger.debug("[Post-rotation cascade] Re-navigating to category...")
                     self.client.get(build_page(self.config.category_url, page_index), request_type="category")
-                    time.sleep(random.uniform(5, 10))
+                    self.delay_policy.wait_post_rotation()
 
                 logger.info("[%s/%s] Extracting: %s", success_count + 1, self.config.product_target, full_link)
                 html_prod = self.client.get(full_link, request_type="product")
@@ -286,7 +326,7 @@ class PipelineOrchestrator:
                         logger.error("AUTO-STOP: Too many consecutive blocks.")
                         return success_count
 
-                    time.sleep(wait_time)
+                    self.delay_policy.wait_block_backoff(wait_time)
                     self.client.reset_session()
                     books_in_session = 0
                     continue
@@ -331,9 +371,8 @@ class PipelineOrchestrator:
             # Move to next page if not yet at target
             if success_count < self.config.product_target:
                 page_index += 1
-                wait_batch = random.uniform(60, 90)
-                logger.info("Batch complete. Waiting %.0fs before next page...", wait_batch)
-                time.sleep(wait_batch)
+                logger.info("Batch complete. Waiting before next page...")
+                self.delay_policy.wait_between_pages()
 
             # Reset batch counters for next iteration
             blocks_in_batch = 0

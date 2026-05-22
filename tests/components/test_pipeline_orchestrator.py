@@ -173,6 +173,13 @@ class TestPipelineOrchestratorIntegration:
                 return None
             return "<html>ok</html>"
 
+        extract_counter = 0
+
+        def mock_extract(html):
+            nonlocal extract_counter
+            extract_counter += 1
+            return [f"/product/{extract_counter}"]
+
         mock_client = Mock()
         mock_client.navigate_to_category.side_effect = flaky_get
         mock_client.get.side_effect = flaky_get
@@ -193,15 +200,28 @@ class TestPipelineOrchestratorIntegration:
             output_path="test.csv"
         )
 
+        zero_delay = DelayPolicy(
+            delay_min=0,
+            delay_max=0,
+            coffee_break_min=0,
+            coffee_break_max=0,
+            page_wait_min=0,
+            page_wait_max=0,
+            rotation_wait_min=0,
+            rotation_wait_max=0,
+            post_rotation_wait_min=0,
+            post_rotation_wait_max=0,
+        )
+
         block_policy = BlockDetectionPolicy(threshold=5)
         orchestrator = PipelineOrchestrator(
             client=mock_client,
-            extract_fn=lambda x: ["/product/1"],
+            extract_fn=mock_extract,
             transform_fn=lambda x: {"title": "Book"},
             checkpoint_mgr=mock_checkpoint_mgr,
             session_policy=SessionRotationPolicy(threshold=10),
             block_policy=block_policy,
-            delay_policy=DelayPolicy(delay_min=0.01, delay_max=0.02),
+            delay_policy=zero_delay,
             config=config,
         )
 

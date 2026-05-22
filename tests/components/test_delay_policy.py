@@ -64,12 +64,12 @@ class TestDelayPolicy:
         policy.wait_coffee_break()
         mock_sleep.assert_called_once()
         sleep_time = mock_sleep.call_args[0][0]
-        # From arte_pipeline.py line 197: random.uniform(150, 250)
+        # From category_pipeline design: random.uniform(150, 250)
         assert 150 <= sleep_time <= 250
 
     @patch('time.sleep')
     def test_coffee_break_range_matches_design(self, mock_sleep):
-        """wait_coffee_break() uses 150-250s range from arte_pipeline design."""
+        """wait_coffee_break() uses 150-250s range from category_pipeline design."""
         policy = DelayPolicy()
         policy.wait_coffee_break()
         mock_sleep.assert_called_once()
@@ -94,3 +94,64 @@ class TestDelayPolicy:
         mock_sleep.assert_called_once()
         sleep_time = mock_sleep.call_args[0][0]
         assert 0.001 <= sleep_time <= 0.002
+
+    # --- Tests for new methods added in fix-orchestrator-test-hang ---
+
+    @patch('time.sleep')
+    def test_wait_between_pages_nominal(self, mock_sleep):
+        """wait_between_pages() sleeps once with value in [60.0, 90.0] by default."""
+        policy = DelayPolicy()
+        policy.wait_between_pages()
+        mock_sleep.assert_called_once()
+        sleep_time = mock_sleep.call_args[0][0]
+        assert 60.0 <= sleep_time <= 90.0
+
+    @patch('time.sleep')
+    def test_wait_between_pages_custom_range(self, mock_sleep):
+        """wait_between_pages() respects custom page_wait_min/max (zero range)."""
+        policy = DelayPolicy(page_wait_min=0, page_wait_max=0)
+        policy.wait_between_pages()
+        mock_sleep.assert_called_once()
+        sleep_time = mock_sleep.call_args[0][0]
+        assert sleep_time == 0
+
+    @patch('time.sleep')
+    def test_wait_session_rotation_default_range(self, mock_sleep):
+        """wait_session_rotation() sleeps once with value in [10.0, 15.0] by default."""
+        policy = DelayPolicy(rotation_wait_min=10, rotation_wait_max=15)
+        policy.wait_session_rotation()
+        mock_sleep.assert_called_once()
+        sleep_time = mock_sleep.call_args[0][0]
+        assert 10.0 <= sleep_time <= 15.0
+
+    @patch('time.sleep')
+    def test_wait_session_rotation_custom_range(self, mock_sleep):
+        """wait_session_rotation() respects custom rotation_wait_min/max (zero range)."""
+        policy = DelayPolicy(rotation_wait_min=0, rotation_wait_max=0)
+        policy.wait_session_rotation()
+        mock_sleep.assert_called_once()
+        sleep_time = mock_sleep.call_args[0][0]
+        assert sleep_time == 0
+
+    @patch('time.sleep')
+    def test_wait_post_rotation_default_range(self, mock_sleep):
+        """wait_post_rotation() sleeps once with value in [5.0, 10.0] by default."""
+        policy = DelayPolicy()
+        policy.wait_post_rotation()
+        mock_sleep.assert_called_once()
+        sleep_time = mock_sleep.call_args[0][0]
+        assert 5.0 <= sleep_time <= 10.0
+
+    @patch('time.sleep')
+    def test_wait_block_backoff_passes_wait_time(self, mock_sleep):
+        """wait_block_backoff(45.5) calls time.sleep exactly once with 45.5."""
+        policy = DelayPolicy()
+        policy.wait_block_backoff(45.5)
+        mock_sleep.assert_called_once_with(45.5)
+
+    @patch('time.sleep')
+    def test_wait_block_backoff_zero(self, mock_sleep):
+        """wait_block_backoff(0) calls time.sleep once with 0."""
+        policy = DelayPolicy()
+        policy.wait_block_backoff(0)
+        mock_sleep.assert_called_once_with(0)
