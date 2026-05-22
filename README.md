@@ -7,7 +7,7 @@
 ![AWS WAF](https://img.shields.io/badge/AWS%20WAF-CAPTCHA%20Bypass-FFA500)
 ![ETL Pipeline](https://img.shields.io/badge/ETL-Two--Level%20Web--Crawler-blueviolet)
 ![Anti-Detection](https://img.shields.io/badge/Anti--Detection-7%20Layers-brightgreen)
-![Tests](https://img.shields.io/badge/Tests-pytest-brightgreen?logo=pytest&logoColor=white)
+![Tests](https://img.shields.io/badge/Tests-158%20pytest-brightgreen?logo=pytest&logoColor=white)
 
 ---
 
