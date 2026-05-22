@@ -57,6 +57,41 @@ BuscaLibre uses **AWS WAF** with two challenge types: `challenge.js` (auto-resol
 
 ---
 
+## Project Architecture
+
+```
+buscalibre-web-scraper/
+├── main.py                      # Entry point (CLI + config handling)
+├── config/
+│   ├── settings.py              # Default configuration
+│   └── headers.py               # Dynamic request headers (request-type aware)
+├── core/
+│   ├── client.py                # HTTPClient (Playwright + session rotation)
+│   ├── parser.py                # Extract product links from category
+│   ├── parser_product.py        # Extract title/author/price/stock
+│   └── paginator.py             # Build paginated category URLs
+├── pipelines/
+│   ├── base_pipeline.py         # Abstract base pipeline class
+│   ├── category_pipeline.py     # Generic Buscalibre category scraper
+│   ├── config.py                # PipelineConfig (dependency injection)
+│   ├── schema.py                # CSVSchema + CheckpointManager
+│   ├── components.py            # Policies + PipelineOrchestrator
+│   └── strategies.py            # DownloadStrategy implementations
+├── storage/
+│   └── outputs/                 # CSV output directory (auto-created)
+├── tests/
+│   ├── parsers/                 # Parser unit tests + fixtures
+│   ├── pipelines/               # Pipeline tests
+│   ├── fixtures/                # HTML test data
+│   └── conftest.py              # Pytest configuration
+├── docs/
+│   ├── TECHNICAL.md             # Architecture & design
+│   └── MIGRATION.md             # Refactor phases
+└── requirements.txt             # Dependencies
+```
+
+---
+
 ## Quick Start
 
 ```bash
@@ -261,41 +296,6 @@ pytest tests/ --cov=. --cov-report=term-missing
 ```
 
 Unit tests with HTML fixtures validate parser behavior deterministically. `core/client.py` requires a live Playwright browser and is covered by integration tests.
-
----
-
-## Project Architecture
-
-```
-buscalibre-web-scraper/
-├── main.py                      # Entry point (CLI + config handling)
-├── config/
-│   ├── settings.py              # Default configuration
-│   └── headers.py               # Dynamic request headers (request-type aware)
-├── core/
-│   ├── client.py                # HTTPClient (Playwright + session rotation)
-│   ├── parser.py                # Extract product links from category
-│   ├── parser_product.py        # Extract title/author/price/stock
-│   └── paginator.py             # Build paginated category URLs
-├── pipelines/
-│   ├── base_pipeline.py         # Abstract base pipeline class
-│   ├── category_pipeline.py     # Generic Buscalibre category scraper
-│   ├── config.py                # PipelineConfig (dependency injection)
-│   ├── schema.py                # CSVSchema + CheckpointManager
-│   ├── components.py            # Policies + PipelineOrchestrator
-│   └── strategies.py            # DownloadStrategy implementations
-├── storage/
-│   └── outputs/                 # CSV output directory (auto-created)
-├── tests/
-│   ├── parsers/                 # Parser unit tests + fixtures
-│   ├── pipelines/               # Pipeline tests
-│   ├── fixtures/                # HTML test data
-│   └── conftest.py              # Pytest configuration
-├── docs/
-│   ├── TECHNICAL.md             # Architecture & design
-│   └── MIGRATION.md             # Refactor phases
-└── requirements.txt             # Dependencies
-```
 
 ---
 
