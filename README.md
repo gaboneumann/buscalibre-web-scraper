@@ -1,6 +1,6 @@
 # BuscaLibre Web Scraper
 
-> Python scraper that bypasses **AWS WAF** on BuscaLibre Chile using Playwright. Extracts books with **0 blocks** using a two-level ETL pipeline, adaptive anti-detection policies, and pluggable download strategies.
+> Python scraper that bypasses **AWS WAF** on BuscaLibre Chile using Playwright. Extracts books with **0 blocks** using a two-level web crawler, adaptive anti-detection policies, and pluggable download strategies.
 
 ![Python](https://img.shields.io/badge/Python-3.9+-3776AB?logo=python&logoColor=white)
 ![Playwright](https://img.shields.io/badge/Playwright-Real%20Browser-45ba4b?logo=playwright&logoColor=white)
@@ -28,7 +28,7 @@ BuscaLibre uses **AWS WAF** with two challenge types: `challenge.js` (auto-resol
 | Execution time | ~30–45 min |
 | 202 blocks | **0** |
 | Anti-detection layers | 7 |
-| Pipeline orchestration | Two-level (categories → products) |
+| Web crawler execution | Sequential two-level (categories → products) |
 | Adaptive behavior | Dynamic `PRODUCT_PER_PAGE` ±15% / +10% |
 
 ---
