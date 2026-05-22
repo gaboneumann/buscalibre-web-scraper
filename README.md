@@ -33,6 +33,10 @@ BuscaLibre uses **AWS WAF** with two challenge types: `challenge.js` (auto-resol
 
 ---
 
+**Multi-Category Capability**: The scraper is fully generic and tested across 5 distinct categories (art, technology, mathematics, sports, graphic novels). Target **any Buscalibre category** by changing `CATEGORY_URL` in config — same anti-detection robustness, zero blocks.
+
+---
+
 ## Evolution: V1 → V2 → V3
 
 | | V1 | V2 | **V3 (current)** |
