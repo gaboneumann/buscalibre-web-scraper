@@ -7,7 +7,7 @@ from config import settings
 class BasePipeline(ABC):
     """Abstract base pipeline class for scraping implementations.
 
-    Provides orchestrator setup and enforcement of required methods for
+    Provides crawler setup and enforcement of required methods for
     site-specific implementations.
     """
 
@@ -61,14 +61,14 @@ class BasePipeline(ABC):
         Returns:
             Number of products successfully scraped and saved.
         """
-        # Base implementation: placeholder for orchestrator setup
-        # Subclasses will override or orchestrator will call into here
+        # Base implementation: placeholder for crawler setup
+        # Subclasses will override or crawler will call into here
         return 0
 
-    def _create_orchestrator(self):
-        """Create and configure pipeline orchestrator.
+    def _create_crawler(self):
+        """Create and configure web crawler engine.
 
         To be implemented by subclasses or overridden in phase 2.
-        Returns the PipelineOrchestrator instance.
+        Returns the WebCrawler instance.
         """
         pass

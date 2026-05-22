@@ -1,4 +1,4 @@
-"""Core ETL pipeline components: Policies and Orchestrator."""
+"""Core crawler components: Policies and WebCrawler engine."""
 import logging
 import random
 import time
@@ -214,8 +214,8 @@ class DelayPolicy:
         time.sleep(wait_time)
 
 
-class PipelineOrchestrator:
-    """Main orchestrator for two-level ETL pipeline (categories → products)."""
+class WebCrawler:
+    """Main crawler engine for two-level web scraping (categories → products)."""
 
     def __init__(
         self,

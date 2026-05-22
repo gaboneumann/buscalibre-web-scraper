@@ -26,7 +26,7 @@ from config.settings import (
 from pipelines.base_pipeline import BasePipeline
 from pipelines.config import PipelineConfig
 from pipelines.components import (
-    PipelineOrchestrator,
+    WebCrawler,
     SessionRotationPolicy,
     BlockDetectionPolicy,
     DelayPolicy,
@@ -97,8 +97,8 @@ class CategoryPipeline(BasePipeline):
         """Return list of CSV field names in order."""
         return ["title", "author", "price", "stock", "page_index", "product_url", "source"]
 
-    def _create_orchestrator(self) -> PipelineOrchestrator:
-        """Create and configure pipeline orchestrator with policies."""
+    def _create_crawler(self) -> WebCrawler:
+        """Create and configure web crawler engine with policies."""
         checkpoint_mgr = CheckpointManager(self.config.output_path, category_url=self.config.category_url)
         session_policy = self.config.session_policy or SessionRotationPolicy()
         block_policy = self.config.block_policy or BlockDetectionPolicy(
@@ -109,7 +109,7 @@ class CategoryPipeline(BasePipeline):
             delay_max=self.config.delay_max,
         )
 
-        return PipelineOrchestrator(
+        return WebCrawler(
             client=self.client,
             extract_fn=self.collect_product_links,
             transform_fn=self.parse_product,
@@ -122,13 +122,13 @@ class CategoryPipeline(BasePipeline):
 
     def run(self) -> int:
         """
-        Execute main scraping pipeline via orchestrator.
+        Execute main scraping pipeline via web crawler.
 
         Returns:
             Number of products successfully scraped and saved.
         """
-        orchestrator = self._create_orchestrator()
-        return orchestrator.run()
+        crawler = self._create_crawler()
+        return crawler.run()
 
 def run() -> int:
     """
