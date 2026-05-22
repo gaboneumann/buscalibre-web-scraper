@@ -5,7 +5,7 @@
 ![Python](https://img.shields.io/badge/Python-3.9+-3776AB?logo=python&logoColor=white)
 ![Playwright](https://img.shields.io/badge/Playwright-Real%20Browser-45ba4b?logo=playwright&logoColor=white)
 ![AWS WAF](https://img.shields.io/badge/AWS%20WAF-CAPTCHA%20Bypass-FFA500)
-![ETL Pipeline](https://img.shields.io/badge/ETL-Two--Level%20Orchestrator-blueviolet)
+![ETL Pipeline](https://img.shields.io/badge/ETL-Two--Level%20Web--Crawler-blueviolet)
 ![Anti-Detection](https://img.shields.io/badge/Anti--Detection-7%20Layers-brightgreen)
 ![Tests](https://img.shields.io/badge/Tests-pytest-brightgreen?logo=pytest&logoColor=white)
 
@@ -75,7 +75,7 @@ buscalibre-web-scraper/
 │   ├── category_pipeline.py     # Generic Buscalibre category scraper
 │   ├── config.py                # PipelineConfig (dependency injection)
 │   ├── schema.py                # CSVSchema + CheckpointManager
-│   ├── components.py            # Policies + PipelineOrchestrator
+│   ├── components.py            # Policies + WebCrawler
 │   └── strategies.py            # DownloadStrategy implementations
 ├── storage/
 │   └── outputs/                 # CSV output directory (auto-created)
@@ -153,13 +153,13 @@ python main.py --config config.json --target 150     # Combine both
 
 ---
 
-## Two-Level ETL Pipeline Structure
+## Two-Level Web Crawler Structure
 
-The scraper implements a **pluggable ETL architecture** with three layers:
+The scraper implements a **pluggable web crawler architecture** with intelligent policies:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│         PipelineOrchestrator (Main Orchestrator)        │
+│         WebCrawler (Main Crawler Engine)        │
 ├─────────────────────────────────────────────────────────┤
 │  Extract (collect_product_links)                        │
 │  ↓                                                      │
@@ -180,7 +180,7 @@ The scraper implements a **pluggable ETL architecture** with three layers:
 
 ### Key Components
 
-- **PipelineOrchestrator**: Two-level iteration (categories → products) with retry, block detection, session rotation, and dynamic adaptation.
+- **WebCrawler**: Two-level iteration (categories → products) with retry, block detection, session rotation, and dynamic adaptation.
 - **PipelineConfig**: Dependency injection container. Replaces global settings, enables testability and multi-target scraping.
 - **Download Strategies**: Pluggable HTTP handling (real browser vs. test fixtures).
 - **Policies**: Reusable, configurable policies for sessions, blocks, and delays.
@@ -314,7 +314,7 @@ Unit tests with HTML fixtures validate parser behavior deterministically. `core/
 Comprehensive docs organized in [`docs/`](docs/):
 
 - **[docs/TECHNICAL.md](docs/TECHNICAL.md)**: full architecture, 7 anti-detection layers, data flow
-- **[docs/MIGRATION.md](docs/MIGRATION.md)**: ETL Pipeline Architecture Refactor (Phases 1-6)
+- **[docs/MIGRATION.md](docs/MIGRATION.md)**: Web Crawler Architecture Refactor (Phases 1-6)
 
 ---
 
