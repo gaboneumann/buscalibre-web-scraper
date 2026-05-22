@@ -12,7 +12,7 @@
 #   pipeline = CategoryPipeline(client=client, config=config)
 
 DOMAIN_URL = "https://www.buscalibre.cl/"
-CATEGORY_URL = "https://www.buscalibre.cl/libros/novela-grafica"
+CATEGORY_URL = "https://www.buscalibre.cl/libros/tecnologia-ingenieria-agricultura"
 
 # HTTP request settings
 REQUEST_TIMEOUT = 20
