@@ -10,7 +10,7 @@ from core.client import HTTPClient
 
 
 class TestOrchestratorRegressionOutput:
-    """Regression tests for PipelineOrchestrator output format."""
+    """Regression tests for WebCrawler output format."""
 
     @pytest.fixture
     def simple_noop_strategy(self):

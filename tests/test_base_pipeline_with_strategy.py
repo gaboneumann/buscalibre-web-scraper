@@ -70,8 +70,8 @@ class TestBasePipelineStrategySupport:
         # Pipeline should store the strategy from config
         assert pipeline.config.download_strategy is mock_strategy
 
-    def test_create_orchestrator_receives_strategy(self):
-        """_create_orchestrator() has access to strategy from config."""
+    def test_create_crawler_receives_strategy(self):
+        """_create_crawler() has access to strategy from config."""
         mock_client = MagicMock()
         mock_strategy = MagicMock()
 
@@ -99,7 +99,7 @@ class TestBasePipelineStrategySupport:
 
         pipeline = TestPipeline(client=mock_client, config=config)
 
-        # _create_orchestrator() should see the strategy
+        # _create_crawler() should see the strategy
         # (We can't test the full orchestrator creation without more setup,
         # but we can verify the config is accessible)
         assert pipeline.config.download_strategy is mock_strategy

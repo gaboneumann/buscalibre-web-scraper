@@ -1,8 +1,8 @@
-"""Integration tests for PipelineOrchestrator."""
+"""Integration tests for WebCrawler."""
 import pytest
 from unittest.mock import Mock, MagicMock, patch
 from pipelines.components import (
-    PipelineOrchestrator,
+    WebCrawler,
     SessionRotationPolicy,
     BlockDetectionPolicy,
     DelayPolicy,
@@ -10,10 +10,10 @@ from pipelines.components import (
 from pipelines.config import PipelineConfig
 
 
-class TestPipelineOrchestratorIntegration:
-    """Test PipelineOrchestrator two-level iteration logic."""
+class TestWebCrawlerIntegration:
+    """Test WebCrawler two-level iteration logic."""
 
-    def test_orchestrator_run_returns_product_count(self):
+    def test_crawler_run_returns_product_count(self):
         """run() returns integer count of successfully saved products."""
         mock_client = Mock()
         mock_checkpoint_mgr = Mock()
@@ -40,7 +40,7 @@ class TestPipelineOrchestratorIntegration:
         mock_checkpoint_mgr.save_record.return_value = None
 
         # Create orchestrator
-        orchestrator = PipelineOrchestrator(
+        crawler = WebCrawler(
             client=mock_client,
             extract_fn=mock_extract,
             transform_fn=mock_transform,
@@ -57,10 +57,10 @@ class TestPipelineOrchestratorIntegration:
         mock_client.reset_session.return_value = None
 
         # Run orchestrator (will iterate 2 products)
-        result = orchestrator.run()
+        result = crawler.run()
         assert isinstance(result, int)
 
-    def test_orchestrator_accesses_config_fields(self):
+    def test_crawler_accesses_config_fields(self):
         """Orchestrator can access PipelineConfig fields."""
         mock_client = Mock()
         mock_checkpoint_mgr = Mock()
@@ -75,7 +75,7 @@ class TestPipelineOrchestratorIntegration:
             output_path="test_output.csv"
         )
 
-        orchestrator = PipelineOrchestrator(
+        crawler = WebCrawler(
             client=mock_client,
             extract_fn=lambda x: [],
             transform_fn=lambda x: {},
@@ -86,11 +86,11 @@ class TestPipelineOrchestratorIntegration:
             config=config,
         )
 
-        assert orchestrator.config.domain_url == "https://api.example.com"
-        assert orchestrator.config.product_target == 500
-        assert orchestrator.config.delay_min == 5.0
+        assert crawler.config.domain_url == "https://api.example.com"
+        assert crawler.config.product_target == 500
+        assert crawler.config.delay_min == 5.0
 
-    def test_orchestrator_delegates_to_policies(self):
+    def test_crawler_delegates_to_policies(self):
         """Orchestrator delegates decisions to policies."""
         mock_client = Mock()
         mock_checkpoint_mgr = Mock()
@@ -110,7 +110,7 @@ class TestPipelineOrchestratorIntegration:
         block_policy = BlockDetectionPolicy(threshold=3)
         delay_policy = DelayPolicy(delay_min=0.01, delay_max=0.02)
 
-        orchestrator = PipelineOrchestrator(
+        crawler = WebCrawler(
             client=mock_client,
             extract_fn=lambda x: ["/product/1"],
             transform_fn=lambda x: {"title": "Book"},
@@ -122,11 +122,11 @@ class TestPipelineOrchestratorIntegration:
         )
 
         # Verify policies are accessible
-        assert orchestrator.session_policy is session_policy
-        assert orchestrator.block_policy is block_policy
-        assert orchestrator.delay_policy is delay_policy
+        assert crawler.session_policy is session_policy
+        assert crawler.block_policy is block_policy
+        assert crawler.delay_policy is delay_policy
 
-    def test_orchestrator_uses_block_policy_for_category_pages(self):
+    def test_crawler_uses_block_policy_for_category_pages(self):
         """Orchestrator aborts when block_policy.on_failure() returns should_abort=True."""
         mock_client = Mock()
         mock_client.navigate_to_category.return_value = None
@@ -148,7 +148,7 @@ class TestPipelineOrchestratorIntegration:
         )
 
         block_policy = BlockDetectionPolicy(threshold=1)
-        orchestrator = PipelineOrchestrator(
+        crawler = WebCrawler(
             client=mock_client,
             extract_fn=lambda x: [],
             transform_fn=lambda x: {},
@@ -159,10 +159,10 @@ class TestPipelineOrchestratorIntegration:
             config=config,
         )
 
-        result = orchestrator.run()
+        result = crawler.run()
         assert result == 0
 
-    def test_orchestrator_block_policy_threshold_respected_not_hardcoded(self):
+    def test_crawler_block_policy_threshold_respected_not_hardcoded(self):
         """Orchestrator with threshold=5 does not abort after only 3 category failures."""
         call_count = 0
 
@@ -214,7 +214,7 @@ class TestPipelineOrchestratorIntegration:
         )
 
         block_policy = BlockDetectionPolicy(threshold=5)
-        orchestrator = PipelineOrchestrator(
+        crawler = WebCrawler(
             client=mock_client,
             extract_fn=mock_extract,
             transform_fn=lambda x: {"title": "Book"},
@@ -225,10 +225,10 @@ class TestPipelineOrchestratorIntegration:
             config=config,
         )
 
-        result = orchestrator.run()
+        result = crawler.run()
         assert call_count >= 4
 
-    def test_orchestrator_stores_client_and_functions(self):
+    def test_crawler_stores_client_and_functions(self):
         """Orchestrator stores client, extraction, and transformation functions."""
         mock_client = Mock()
         mock_checkpoint_mgr = Mock()
@@ -239,7 +239,7 @@ class TestPipelineOrchestratorIntegration:
         def transform_fn(html):
             return {}
 
-        orchestrator = PipelineOrchestrator(
+        crawler = WebCrawler(
             client=mock_client,
             extract_fn=extract_fn,
             transform_fn=transform_fn,
@@ -259,7 +259,7 @@ class TestPipelineOrchestratorIntegration:
             ),
         )
 
-        assert orchestrator.client is mock_client
-        assert orchestrator.extract_fn is extract_fn
-        assert orchestrator.transform_fn is transform_fn
-        assert orchestrator.checkpoint_mgr is mock_checkpoint_mgr
+        assert crawler.client is mock_client
+        assert crawler.extract_fn is extract_fn
+        assert crawler.transform_fn is transform_fn
+        assert crawler.checkpoint_mgr is mock_checkpoint_mgr

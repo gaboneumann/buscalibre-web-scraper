@@ -48,8 +48,8 @@ class TestCategoryPipelineInterface:
         assert "source" in fields
 
 
-class TestCategoryPipelineOrchestratorWiring:
-    """Test that _create_orchestrator() correctly wires injected policies."""
+class TestCategoryPipelineCrawlerWiring:
+    """Test that _create_crawler() correctly wires injected policies."""
 
     def _make_config(self, **kwargs):
         defaults = dict(
@@ -65,43 +65,43 @@ class TestCategoryPipelineOrchestratorWiring:
         defaults.update(kwargs)
         return PipelineConfig(**defaults)
 
-    def test_create_orchestrator_uses_injected_session_policy(self):
-        """_create_orchestrator() uses session_policy from config when provided."""
+    def test_create_crawler_uses_injected_session_policy(self):
+        """_create_crawler() uses session_policy from config when provided."""
         policy = SessionRotationPolicy(threshold=7)
         config = self._make_config(session_policy=policy)
         pipeline = CategoryPipeline(client=Mock(), config=config)
-        orchestrator = pipeline._create_orchestrator()
-        assert orchestrator.session_policy is policy
+        crawler = pipeline._create_crawler()
+        assert crawler.session_policy is policy
 
-    def test_create_orchestrator_uses_injected_block_policy(self):
-        """_create_orchestrator() uses block_policy from config when provided."""
+    def test_create_crawler_uses_injected_block_policy(self):
+        """_create_crawler() uses block_policy from config when provided."""
         policy = BlockDetectionPolicy(threshold=9)
         config = self._make_config(block_policy=policy)
         pipeline = CategoryPipeline(client=Mock(), config=config)
-        orchestrator = pipeline._create_orchestrator()
-        assert orchestrator.block_policy is policy
+        crawler = pipeline._create_crawler()
+        assert crawler.block_policy is policy
 
-    def test_create_orchestrator_uses_injected_delay_policy(self):
-        """_create_orchestrator() uses delay_policy from config when provided."""
+    def test_create_crawler_uses_injected_delay_policy(self):
+        """_create_crawler() uses delay_policy from config when provided."""
         policy = DelayPolicy(delay_min=0.5, delay_max=1.0)
         config = self._make_config(delay_policy=policy)
         pipeline = CategoryPipeline(client=Mock(), config=config)
-        orchestrator = pipeline._create_orchestrator()
-        assert orchestrator.delay_policy is policy
+        crawler = pipeline._create_crawler()
+        assert crawler.delay_policy is policy
 
-    def test_create_orchestrator_falls_back_to_defaults_when_no_policy_injected(self):
-        """_create_orchestrator() creates default policies when config has none."""
+    def test_create_crawler_falls_back_to_defaults_when_no_policy_injected(self):
+        """_create_crawler() creates default policies when config has none."""
         config = self._make_config()
         pipeline = CategoryPipeline(client=Mock(), config=config)
-        orchestrator = pipeline._create_orchestrator()
-        assert isinstance(orchestrator.session_policy, SessionRotationPolicy)
-        assert isinstance(orchestrator.block_policy, BlockDetectionPolicy)
-        assert isinstance(orchestrator.delay_policy, DelayPolicy)
+        crawler = pipeline._create_crawler()
+        assert isinstance(crawler.session_policy, SessionRotationPolicy)
+        assert isinstance(crawler.block_policy, BlockDetectionPolicy)
+        assert isinstance(crawler.delay_policy, DelayPolicy)
 
-    def test_create_orchestrator_delay_policy_reads_config_delays_as_fallback(self):
+    def test_create_crawler_delay_policy_reads_config_delays_as_fallback(self):
         """Default delay_policy uses config.delay_min and config.delay_max."""
         config = self._make_config(delay_min=3.3, delay_max=7.7)
         pipeline = CategoryPipeline(client=Mock(), config=config)
-        orchestrator = pipeline._create_orchestrator()
-        assert orchestrator.delay_policy._delay_min == 3.3
-        assert orchestrator.delay_policy._delay_max == 7.7
+        crawler = pipeline._create_crawler()
+        assert crawler.delay_policy._delay_min == 3.3
+        assert crawler.delay_policy._delay_max == 7.7
