@@ -7,7 +7,7 @@ Browser instance persists across session rotations — CAPTCHA only solved once.
 import logging
 import time
 import random
-from typing import Tuple
+from typing import Tuple, Optional
 from playwright.sync_api import sync_playwright
 from config.settings import (
     DOMAIN_URL, CATEGORY_URL, REQUEST_TIMEOUT,
@@ -15,6 +15,7 @@ from config.settings import (
 )
 from config.headers import CHROME_120_UA
 from urllib.parse import urljoin
+from core.windows_manager import WindowsManager
 
 logger = logging.getLogger(__name__)
 
@@ -34,19 +35,47 @@ class HTTPClient:
         domain_url: str | None = None,
         category_url: str | None = None,
         backoff_base_http: float = 6,
+        windows_manager=None,
     ):
+        # --- 1. Plain config (unchanged) ---
         self.timeout = timeout * 3000  # Convert seconds to ms for Playwright
         self._strategy = download_strategy
         self._domain_url = domain_url or DOMAIN_URL
         self._category_url = category_url or CATEGORY_URL
         self._backoff_base_http = backoff_base_http
-        self._playwright = sync_playwright().start()
-        self._browser = self._playwright.chromium.launch(headless=False)
+
+        # --- 2. ALL Playwright/session attributes initialized FIRST (None or injected) ---
+        #     Guarantees close()/reset_session() are AttributeError-safe on the skip path.
+        self._playwright = None
+        self._wm = windows_manager        # may stay None when browser is skipped
+        self._browser = None
         self._context = None
         self._page = None
         self._waf_token = None  # Cached across session rotations
         self._in_recovery = False  # Track if we're in recovery mode (post-error)
-        self.reset_session()
+
+        # --- 3. Single source of truth, evaluated once ---
+        needs_browser = self._strategy is None or self._strategy.requires_browser
+
+        # --- 4. Conditional browser bring-up ---
+        if needs_browser:
+            self._playwright = sync_playwright().start()
+            self._wm = windows_manager or WindowsManager()
+
+            # Auto-position browser on the secondary monitor (HP laptop screen)
+            # so it doesn't pop up over whatever is on the primary monitor.
+            # --start-maximized fills that monitor; verified to coexist with
+            # --window-position under XWayland (--ozone-platform=x11).
+            launch_args = ["--ozone-platform=x11"]
+            secondary = self._wm.detect_secondary_monitor()
+            if secondary and len(secondary) == 4:
+                x, y, _, _ = secondary
+                launch_args.append(f"--window-position={x},{y}")
+                launch_args.append("--start-maximized")
+                logger.info("Opening browser maximized on secondary monitor at x=%d, y=%d", x, y)
+
+            self._browser = self._playwright.chromium.launch(headless=False, args=launch_args)
+            self.reset_session()
 
     def _get_adaptive_delay(self) -> Tuple[float, float]:
         """
@@ -61,7 +90,10 @@ class HTTPClient:
     def reset_session(self):
         """Rotate session identity (new context = new cookies/fingerprint).
         Reuses the cached aws-waf-token to skip CAPTCHA on subsequent rotations.
+        No-op when the active strategy needs no browser.
         """
+        if self._strategy is not None and not self._strategy.requires_browser:
+            return
         self._rotate_context()
         self._initialize_session()
 
@@ -73,8 +105,16 @@ class HTTPClient:
             except Exception:
                 pass
 
-        self._context = self._browser.new_context(user_agent=CHROME_120_UA)
+        # no_viewport=True lets the page fill the maximized window instead of
+        # Playwright's default fixed 1280x720 viewport.
+        self._context = self._browser.new_context(user_agent=CHROME_120_UA, no_viewport=True)
         self._page = self._context.new_page()
+
+        # Allow WM to register the new browser window before xdotool can find it
+        time.sleep(1)
+
+        # Pin window to terminal's workspace after rotation
+        self._wm.pin_window()
 
         # Restore WAF token so CAPTCHA doesn't re-trigger
         if self._waf_token:
@@ -93,6 +133,8 @@ class HTTPClient:
 
             if "Human Verification" in self._page.title():
                 logger.warning("CAPTCHA detected — please solve it in the browser window...")
+                self._wm.pin_window()
+                self._wm.notify_captcha()
                 self._page.wait_for_function(
                     "document.title !== 'Human Verification'",
                     timeout=180000
@@ -184,6 +226,30 @@ class HTTPClient:
             logger.error("Connection error: %s", e)
             self._in_recovery = True  # Mark for recovery mode
             return None
+
+    def close(self) -> None:
+        """Release all Playwright resources (context, browser, playwright).
+
+        Each step is wrapped defensively so a failure in one does not prevent
+        the others from running. Safe to call with a None context.
+        """
+        try:
+            if self._context:
+                self._context.close()
+        except Exception:
+            pass
+
+        try:
+            if self._browser:
+                self._browser.close()
+        except Exception:
+            pass
+
+        try:
+            if self._playwright:
+                self._playwright.stop()
+        except Exception:
+            pass
 
     def navigate_to_category(self, category_url: str) -> str | None:
         """Cascade navigation: Home → Category."""

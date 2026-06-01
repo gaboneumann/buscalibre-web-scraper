@@ -23,6 +23,8 @@ class DownloadStrategy(ABC):
     Implementers must define download(url, request_type) → str | None.
     """
 
+    requires_browser: bool = True  # default: strategy drives a real browser
+
     @abstractmethod
     def download(self, url: str, request_type: str) -> str | None:
         """Download content from URL.
@@ -70,6 +72,8 @@ class NoOpStrategy(DownloadStrategy):
 
     Used for testing to run full pipeline in seconds.
     """
+
+    requires_browser = False
 
     def __init__(self, fixture_html: str | None = None):
         """Initialize with optional fixture HTML.
