@@ -129,6 +129,107 @@ def test_full_category_iteration_exhausts_all_pages():
     assert page_call_count[0] == 4
 
 
+def _make_crawler_with_delay_policy(config, extract_fn, delay_policy, transform_fn=None):
+    """Build a WebCrawler with a specific DelayPolicy instance for state inspection."""
+    mock_client = Mock()
+    mock_client.navigate_to_category.return_value = "<html>category</html>"
+    mock_client.get.return_value = "<html>product</html>"
+    mock_client.reset_session.return_value = None
+
+    mock_checkpoint_mgr = Mock()
+    mock_checkpoint_mgr.get_scraped_urls.return_value = set()
+    mock_checkpoint_mgr.save_record.return_value = None
+
+    if transform_fn is None:
+        transform_fn = lambda html: {"title": "Book", "price": 100}
+
+    return WebCrawler(
+        client=mock_client,
+        extract_fn=extract_fn,
+        transform_fn=transform_fn,
+        checkpoint_mgr=mock_checkpoint_mgr,
+        session_policy=SessionRotationPolicy(threshold=100),
+        block_policy=BlockDetectionPolicy(threshold=10),
+        delay_policy=delay_policy,
+        config=config,
+    )
+
+
+def test_block_heavy_batch_raises_multiplier():
+    """3 blocks + 1 success in a batch → delay_policy.multiplier > 1.0 after batch boundary."""
+    config = _make_config(product_target=100)
+    delay_policy = _make_zero_delay()
+
+    page_calls = [0]
+
+    def extract_fn(html):
+        page_calls[0] += 1
+        if page_calls[0] == 1:
+            return ["/product/p1", "/product/p2", "/product/p3", "/product/p4"]
+        return []
+
+    call_count = [0]
+
+    def client_get_side_effect(url, request_type=None):
+        if request_type == "product":
+            call_count[0] += 1
+            # First 3 products → block (None), 4th → success
+            if call_count[0] <= 3:
+                return None
+            return "<html>product</html>"
+        return "<html>category</html>"
+
+    crawler = _make_crawler_with_delay_policy(config, extract_fn, delay_policy)
+    crawler.client.get.side_effect = client_get_side_effect
+    crawler.block_policy = BlockDetectionPolicy(threshold=10)  # High threshold so no abort
+
+    crawler.run()
+
+    # 3 blocks / (3 blocks + 1 success) = 0.75 > 0.2 threshold → multiplier escalated
+    assert delay_policy.multiplier > 1.0
+
+
+def test_empty_batch_does_not_change_multiplier():
+    """Empty batch (0 blocks + 0 successes) → update_multiplier NOT called; multiplier stays."""
+    # We simulate this by starting with a multiplier != 1.0 and verifying it's unchanged.
+    # An empty batch occurs when extract_fn returns [] immediately.
+    config = _make_config(product_target=100)
+    delay_policy = _make_zero_delay()
+    delay_policy._multiplier = 1.8  # Pre-set to non-default
+
+    # extract_fn returns [] on page 1: no products processed → empty batch
+    crawler = _make_crawler_with_delay_policy(config, extract_fn=lambda html: [], delay_policy=delay_policy)
+    crawler.run()
+
+    # No products → empty batch → HOLD → multiplier must remain 1.8
+    assert delay_policy.multiplier == pytest.approx(1.8)
+
+
+def test_clean_batch_decays_multiplier():
+    """0 blocks + 3 successes + multiplier==2.0 → update_multiplier(0.0) → multiplier decays.
+
+    Page 1 has 3 products (all succeed), then page 2 is empty → batch boundary fires
+    after page 1 completes. product_target is high enough to not trigger early exit.
+    """
+    config = _make_config(product_target=100)
+    delay_policy = _make_zero_delay()
+    delay_policy._multiplier = 2.0
+
+    page_calls = [0]
+
+    def extract_fn(html):
+        page_calls[0] += 1
+        if page_calls[0] == 1:
+            return ["/product/p0", "/product/p1", "/product/p2"]
+        return []
+
+    crawler = _make_crawler_with_delay_policy(config, extract_fn, delay_policy)
+    crawler.run()
+
+    # 0 blocks / 3 successes → block_rate=0.0 → decay: 2.0 * 0.9 = 1.8
+    assert delay_policy.multiplier == pytest.approx(1.8)
+
+
 def test_batch_summary_emitted_per_page(caplog):
     """BATCH SUMMARY is logged once per populated page, not gated on product_target."""
     import logging

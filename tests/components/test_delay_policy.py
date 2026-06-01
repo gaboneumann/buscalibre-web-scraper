@@ -26,11 +26,12 @@ class TestDelayPolicy:
     @patch('time.sleep')
     def test_wait_between_products_sleeps_in_range(self, mock_sleep):
         """wait_between_products() sleeps for time between delay_min and delay_max."""
-        policy = DelayPolicy(delay_min=8.0, delay_max=15.0)
+        policy = DelayPolicy(delay_min=4.0, delay_max=8.0)
         policy.wait_between_products()
         mock_sleep.assert_called_once()
         sleep_time = mock_sleep.call_args[0][0]
-        assert 8.0 <= sleep_time <= 15.0
+        # Baseline: multiplier defaults to 1.0, so range is unscaled production 4-8s
+        assert 4.0 <= sleep_time <= 8.0
 
     def test_should_take_coffee_break_false_below_threshold(self):
         """should_take_coffee_break() returns False when product_count < threshold."""
@@ -155,3 +156,65 @@ class TestDelayPolicy:
         policy = DelayPolicy()
         policy.wait_block_backoff(0)
         mock_sleep.assert_called_once_with(0)
+
+
+class TestDelayPolicyMultiplier:
+    """Tests for the adaptive delay multiplier (Layer 8)."""
+
+    def test_default_multiplier_is_one(self):
+        """GIVEN DelayPolicy constructed with no extra args WHEN multiplier read THEN == 1.0."""
+        policy = DelayPolicy()
+        assert policy.multiplier == 1.0
+
+    def test_custom_params_stored_correctly(self):
+        """GIVEN custom multiplier params WHEN constructed THEN multiplier==1.0, params stored."""
+        policy = DelayPolicy(
+            max_multiplier=2.0,
+            block_rate_threshold=0.3,
+            scale_up=1.2,
+            scale_down=0.95,
+        )
+        assert policy.multiplier == 1.0
+        assert policy._max_multiplier == 2.0
+        assert policy._block_rate_threshold == 0.3
+
+    def test_over_threshold_escalates(self):
+        """GIVEN block_rate=0.5 > threshold=0.2 WHEN update_multiplier called THEN multiplier==1.5."""
+        policy = DelayPolicy(scale_up=1.5, block_rate_threshold=0.2)
+        result = policy.update_multiplier(0.5)
+        assert result == 1.5
+        assert policy.multiplier == 1.5
+
+    def test_cap_clamp_at_max_multiplier(self):
+        """GIVEN multiplier==2.5, update_multiplier(0.9) THEN multiplier==3.0 (not 3.75)."""
+        policy = DelayPolicy(max_multiplier=3.0, scale_up=1.5)
+        policy._multiplier = 2.5
+        policy.update_multiplier(0.9)
+        assert policy.multiplier == 3.0
+
+    def test_decay_on_clean_batch(self):
+        """GIVEN multiplier==2.0, update_multiplier(0.0) THEN multiplier==1.8."""
+        policy = DelayPolicy(scale_down=0.9)
+        policy._multiplier = 2.0
+        policy.update_multiplier(0.0)
+        assert policy.multiplier == pytest.approx(1.8)
+
+    def test_floor_clamp_prevents_going_below_one(self):
+        """GIVEN multiplier==1.0, update_multiplier(0.0) THEN multiplier stays 1.0."""
+        policy = DelayPolicy(scale_down=0.9)
+        policy.update_multiplier(0.0)
+        assert policy.multiplier == 1.0
+
+    def test_hold_band_below_threshold(self):
+        """GIVEN multiplier==1.5, update_multiplier(0.1) (below threshold) THEN unchanged."""
+        policy = DelayPolicy(block_rate_threshold=0.2)
+        policy._multiplier = 1.5
+        policy.update_multiplier(0.1)
+        assert policy.multiplier == 1.5
+
+    def test_hold_band_exactly_at_threshold(self):
+        """GIVEN multiplier==1.5, update_multiplier(0.2) (at threshold) THEN unchanged."""
+        policy = DelayPolicy(block_rate_threshold=0.2)
+        policy._multiplier = 1.5
+        policy.update_multiplier(0.2)
+        assert policy.multiplier == 1.5

@@ -6,7 +6,7 @@
 ![Playwright](https://img.shields.io/badge/Playwright-Real%20Browser-45ba4b?logo=playwright&logoColor=white)
 ![AWS WAF](https://img.shields.io/badge/AWS%20WAF-CAPTCHA%20Bypass-FFA500)
 ![ETL Pipeline](https://img.shields.io/badge/ETL-Two--Level%20Web--Crawler-blueviolet)
-![Anti-Detection](https://img.shields.io/badge/Anti--Detection-7%20Layers-brightgreen)
+![Anti-Detection](https://img.shields.io/badge/Anti--Detection-8%20Layers-brightgreen)
 ![Tests](https://img.shields.io/badge/Tests-158%20pytest-brightgreen?logo=pytest&logoColor=white)
 
 ---
@@ -27,9 +27,9 @@ BuscaLibre uses **AWS WAF** with two challenge types: `challenge.js` (auto-resol
 | Categories tested | arte, tecnología, matemáticas, deportes, novela-gráfica |
 | Success rate | **100%** |
 | 202 blocks | **0** |
-| Anti-detection layers | 7 |
+| Anti-detection layers | 8 |
 | Web crawler execution | Sequential two-level (categories → products) |
-| Adaptive behavior | Dynamic `PRODUCT_PER_PAGE` ±15% / +10% |
+| Adaptive behavior | Layer 8: Adaptive Delay Backoff (multiplier 1.0–3.0) |
 
 ---
 
@@ -195,7 +195,7 @@ The scraper implements a **pluggable web crawler architecture** with intelligent
 
 ## Anti-Detection
 
-### 7 Layers
+### 8 Layers
 
 | # | Layer | Purpose |
 |---|---|---|
@@ -206,6 +206,7 @@ The scraper implements a **pluggable web crawler architecture** with intelligent
 | 5 | **Consistent User-Agent** | Chrome 120 UA matches Chromium binary (no TLS/UA mismatch) |
 | 6 | **Cascade Navigation** | Home → Category → Product (avoids bot-pattern direct hits) |
 | 7 | **Shuffling + Checkpoint** | Random link order + CSV deduplication on resume |
+| 8 | **Adaptive Delay Backoff** | Per-batch block rate drives multiplier (1.0–3.0×) on the inter-request delay |
 
 > Full implementation details with code samples: **[docs/TECHNICAL.md](docs/TECHNICAL.md)**
 
@@ -226,11 +227,12 @@ The scraper implements a **pluggable web crawler architecture** with intelligent
 - **Coffee breaks:** Every 10–15 products, sleep 150–250 seconds (2.5–4.2 min)
 - **Purpose:** Human-like behavior, avoid pattern detection
 
-#### Dynamic `PRODUCT_PER_PAGE` Adaptation
-- On ≥2 blocks per batch: **Reduce by 15%** (0.85×)
-- On ≥10 successes + 0 blocks: **Increase by 10%** (1.10×)
-- Range: 5 (min) to original setting (max)
-- Purpose: Self-tune scraping rate based on server response
+#### Adaptive Delay Backoff (Layer 8)
+- On block_rate > 20%: **Escalate multiplier × 1.5**, capped at 3.0×
+- On block_rate == 0%: **Decay multiplier × 0.9**, floored at 1.0×
+- On 0% < block_rate ≤ 20%: **Hold** (avoid oscillation)
+- Base delay 4–8s; at 3.0× peak: 12–24s per product
+- Purpose: Automatically back off under pressure, recover during clean runs
 
 ---
 
@@ -317,7 +319,7 @@ Unit tests with HTML fixtures validate parser behavior deterministically. `core/
 
 Comprehensive docs organized in [`docs/`](docs/):
 
-- **[docs/TECHNICAL.md](docs/TECHNICAL.md)**: full architecture, 7 anti-detection layers, data flow
+- **[docs/TECHNICAL.md](docs/TECHNICAL.md)**: full architecture, 8 anti-detection layers, data flow
 - **[docs/MIGRATION.md](docs/MIGRATION.md)**: Web Crawler Architecture Refactor (Phases 1-6)
 
 ---

@@ -36,7 +36,7 @@ The scraper runs a two-level nested pipeline:
 │  │  │ • Parse data (title, author, price, stock)  │   │    │
 │  │  │ • STREAMING write: save_single_record()     │   │    │
 │  │  │   (line-by-line to CSV immediately)         │   │    │
-│  │  │ • Delay: 8–15s + random jitter              │   │    │
+│  │  │ • Delay: 4–8s × multiplier (Layer 8)         │   │    │
 │  │  │ • LAYER 4d: Coffee break every 10–15 books  │   │    │
 │  │  │             (150–250s human-like pause)      │   │    │
 │  │  │ • 202 handling: 45–70s + context reset      │   │    │
@@ -64,7 +64,7 @@ main.py (Orchestrator)
    - Playwright: GET page
    - Parse data
    - Save to CSV (append)
-   - Delay 8–15s + jitter
+   - Delay 4–8s × multiplier (Layer 8) + jitter
    - Coffee break each 10–15 books
         │
    storage/outputs/books_arte.csv
@@ -72,7 +72,7 @@ main.py (Orchestrator)
 
 ---
 
-## Anti-Detection Systems (7 Layers)
+## Anti-Detection Systems (8 Layers)
 
 ### Layer 1: Real Browser Execution via Playwright
 
@@ -134,7 +134,7 @@ Six randomness points, each independent:
 |---|---|---|
 | 4a: Warm-up jitter | `_initialize_session()` | 2–4s before navigating home |
 | 4b: Pre-request jitter | `client.get()` | 2–5s before each `page.goto()` |
-| 4c: Main delay | `category_pipeline.py` | 8–15s between products (PRIMARY) |
+| 4c: Main delay | `category_pipeline.py` | 4–8s between products × Layer 8 multiplier (1.0–3.0) |
 | 4d: Coffee break | `category_pipeline.py` | 150–250s every 10–15 books |
 | 4e: Post-block recovery | `category_pipeline.py` | 45–70s after 202 |
 | 4f: Page pause | `category_pipeline.py` | 60–90s between category pages |
@@ -186,6 +186,38 @@ success_count = len(scraped_urls)       # Resume from checkpoint
 
 - **Shuffling:** Prevents "always extracts first 50 in order" WAF detection.
 - **Checkpoint:** On crash, re-run skips already-scraped URLs. `success_count` starts from CSV length so the progress counter is accurate on resume.
+
+---
+
+### Layer 8: Adaptive Delay Backoff
+
+```python
+# pipelines/components.py — at the per-page batch boundary in WebCrawler.run()
+total = blocks_in_batch + successful_in_batch
+if total == 0:
+    pass  # empty batch → HOLD (no signal)
+else:
+    block_rate = blocks_in_batch / total
+    delay_policy.update_multiplier(block_rate)
+```
+
+After every category-page batch, the crawlercomputes a `block_rate` and adjusts the inter-request delay multiplier:
+
+| Condition | Action |
+|---|---|
+| `block_rate > 0.2` | Escalate: `multiplier × 1.5`, capped at `3.0` |
+| `block_rate == 0.0` | Decay: `multiplier × 0.9`, floored at `1.0` |
+| `0.0 < block_rate ≤ 0.2` | HOLD (no change — avoid oscillation) |
+| Both counters zero | HOLD (no signal — don't penalise empty pages) |
+
+The multiplier scales only Layer 4c (`wait_between_products`). All other waits (4a, 4b, 4d, 4e, 4f) are untouched — no double-counting.
+
+**Timing at peak (sustained high block rate, multiplier capped at 3.0):**
+- Layer 4c: `uniform(4, 8) × 3.0` = **12–24 seconds** per product (base)
+- Layer 4e: exponential backoff up to **180 seconds** on a single blocked request
+- Worst-case combined: **~204 seconds per product** — this is intentional, not a bug
+
+**Implementation:** `DelayPolicy` carries `_multiplier` as observable state. The `multiplier` property is publicly readable, enabling state-based assertions in tests without time mocking.
 
 ---
 
@@ -244,8 +276,8 @@ PRODUCT_TARGET = 100          # Books to extract
 PRODUCT_PER_PAGE = 50         # Items per category page
 REQUEST_TIMEOUT = 20          # Playwright uses timeout * 3000ms internally
 
-DELAY_MIN = 8.0               # Minimum delay between products (seconds)
-DELAY_MAX = 15.0              # Maximum delay between products (seconds)
+DELAY_MIN = 4.0               # Minimum delay between products (seconds, base — Layer 8 scales up)
+DELAY_MAX = 8.0               # Maximum delay between products (seconds, base — Layer 8 scales up)
 
 OUTPUT_PATH = "storage/outputs/books_arte.csv"
 SOURCE_NAME = "buscalibre_cl"

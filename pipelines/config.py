@@ -47,7 +47,6 @@ class PipelineConfig:
         self.category_url = category_url
         self.product_target = product_target
         self.product_per_page = product_per_page
-        self._original_product_per_page = product_per_page
         self.delay_min = delay_min
         self.delay_max = delay_max
         self.source_name = source_name
@@ -78,31 +77,6 @@ class PipelineConfig:
             output_path=settings.OUTPUT_PATH,
             download_strategy=None,
         )
-
-    def adapt_product_per_page(self, factor: float) -> int:
-        """
-        Adapt PRODUCT_PER_PAGE by multiplying by factor.
-
-        Args:
-            factor: Multiplier (0.85 for -15%, 1.10 for +10%).
-
-        Returns:
-            New PRODUCT_PER_PAGE value.
-
-        Notes:
-            - Limited between 5 (min) and _original_product_per_page (max).
-            - Prints adaptation log.
-        """
-        new_value = int(self.product_per_page * factor)
-        new_value = max(5, min(new_value, self._original_product_per_page))
-
-        old_value = self.product_per_page
-        self.product_per_page = new_value
-
-        if old_value != new_value:
-            logger.info("ADAPT PRODUCT_PER_PAGE: %s → %s (factor=%.2f)", old_value, new_value, factor)
-
-        return new_value
 
     @classmethod
     def from_dict(cls, data: dict):

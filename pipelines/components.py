@@ -139,6 +139,10 @@ class DelayPolicy:
         rotation_wait_max: float = 15,
         post_rotation_wait_min: float = 5,
         post_rotation_wait_max: float = 10,
+        max_multiplier: float = 3.0,
+        scale_up: float = 1.5,
+        scale_down: float = 0.9,
+        block_rate_threshold: float = 0.2,
     ):
         """
         Initialize delay policy.
@@ -155,6 +159,10 @@ class DelayPolicy:
             rotation_wait_max: Maximum wait after session rotation in seconds (default 15).
             post_rotation_wait_min: Minimum post-rotation cascade wait in seconds (default 5).
             post_rotation_wait_max: Maximum post-rotation cascade wait in seconds (default 10).
+            max_multiplier: Maximum adaptive delay multiplier cap (default 3.0).
+            scale_up: Factor to increase multiplier on over-threshold block rate (default 1.5).
+            scale_down: Factor to decrease multiplier on clean batches (default 0.9).
+            block_rate_threshold: Block rate above which multiplier escalates (default 0.2).
         """
         self._delay_min = delay_min or getattr(settings, 'DELAY_MIN', 30)
         self._delay_max = delay_max or getattr(settings, 'DELAY_MAX', 55)
@@ -167,10 +175,48 @@ class DelayPolicy:
         self._rotation_wait_max = rotation_wait_max
         self._post_rotation_wait_min = post_rotation_wait_min
         self._post_rotation_wait_max = post_rotation_wait_max
+        self._max_multiplier = max_multiplier
+        self._scale_up = scale_up
+        self._scale_down = scale_down
+        self._block_rate_threshold = block_rate_threshold
+        self._multiplier = 1.0
+
+    @property
+    def multiplier(self) -> float:
+        """Current adaptive delay multiplier (starts at 1.0, range [1.0, max_multiplier])."""
+        return self._multiplier
+
+    def update_multiplier(self, block_rate: float) -> float:
+        """
+        Update the adaptive delay multiplier based on the observed block rate.
+
+        Rules:
+            - block_rate > threshold  → escalate: multiplier *= scale_up, capped at max_multiplier
+            - block_rate == 0.0       → decay: multiplier *= scale_down, floored at 1.0
+            - 0.0 < block_rate <= threshold → HOLD (unchanged)
+
+        Note: empty-batch HOLD (0 blocks + 0 successes) is enforced by the caller
+        (WebCrawler), which skips calling this method when both counters are zero.
+
+        Args:
+            block_rate: Fraction of blocked requests in the last batch [0.0, 1.0].
+
+        Returns:
+            The updated multiplier value.
+        """
+        if block_rate > self._block_rate_threshold:
+            self._multiplier = min(self._multiplier * self._scale_up, self._max_multiplier)
+        elif block_rate == 0.0:
+            self._multiplier = max(self._multiplier * self._scale_down, 1.0)
+        # else: 0.0 < block_rate <= threshold → HOLD (no change)
+        return self._multiplier
 
     def wait_between_products(self) -> None:
-        """Sleep for delay_min to delay_max seconds between product requests."""
-        sleep_time = random.uniform(self._delay_min, self._delay_max)
+        """Sleep for delay_min to delay_max seconds, scaled by the adaptive multiplier."""
+        sleep_time = random.uniform(
+            self._delay_min * self._multiplier,
+            self._delay_max * self._multiplier,
+        )
         time.sleep(sleep_time)
 
     def should_take_coffee_break(self, product_count: int) -> bool:
@@ -366,13 +412,20 @@ class WebCrawler:
 
             logger.info("BATCH SUMMARY: %s success, %s blocks", successful_in_batch, blocks_in_batch)
 
-            # Dynamic adaptation based on batch results
-            if blocks_in_batch >= 2:
-                logger.warning("TRIGGERS: %s bloques detectados, reduciendo PRODUCT_PER_PAGE...", blocks_in_batch)
-                self.config.adapt_product_per_page(0.85)  # -15%
-            elif successful_in_batch >= 10 and blocks_in_batch == 0:
-                logger.info("TRIGGERS: %s sucessos sin bloques, aumentando PRODUCT_PER_PAGE...", successful_in_batch)
-                self.config.adapt_product_per_page(1.10)  # +10%
+            # Layer 8: Adaptive Delay Backoff — update multiplier based on batch block rate.
+            # The `total == 0` guard implements the empty-batch HOLD: a batch with no
+            # blocks AND no successes (e.g. fully resumed-from-checkpoint page) must NOT
+            # decay the multiplier. This is why we guard here instead of dividing by
+            # max(1, total), which would feed a spurious block_rate=0.0 into decay.
+            total = blocks_in_batch + successful_in_batch
+            if total == 0:
+                logger.debug("LAYER 8: empty batch, hold multiplier at %.2f", self.delay_policy.multiplier)
+            else:
+                block_rate = blocks_in_batch / total
+                new_multiplier = self.delay_policy.update_multiplier(block_rate)
+                logger.info(
+                    "LAYER 8: block_rate=%.2f → multiplier=%.2f", block_rate, new_multiplier
+                )
 
             page_index += 1
             logger.info("Batch complete. Waiting before next page...")
