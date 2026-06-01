@@ -32,7 +32,6 @@ class TestOrchestratorRegressionOutput:
             domain_url="https://example.com",
             category_url="https://example.com/art",
             product_target=1,
-            product_per_page=1,
             delay_min=0.001,
             delay_max=0.002,
             source_name="test_source",

@@ -56,7 +56,6 @@ class TestCategoryPipelineCrawlerWiring:
             domain_url="https://example.com",
             category_url="https://example.com/books",
             product_target=10,
-            product_per_page=5,
             delay_min=1.0,
             delay_max=2.0,
             source_name="test",

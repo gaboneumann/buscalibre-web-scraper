@@ -35,7 +35,6 @@ class TestBasePipelineInit:
             domain_url="https://example.com",
             category_url="https://example.com/books",
             product_target=100,
-            product_per_page=50,
             delay_min=8.0,
             delay_max=15.0,
             source_name="test",

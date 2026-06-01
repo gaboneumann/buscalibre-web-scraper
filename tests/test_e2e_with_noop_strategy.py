@@ -46,7 +46,6 @@ class TestE2EWithNoOpStrategy:
             domain_url="https://example.com",
             category_url="https://example.com/art",
             product_target=3,
-            product_per_page=3,
             delay_min=0.001,
             delay_max=0.002,
             source_name="test",

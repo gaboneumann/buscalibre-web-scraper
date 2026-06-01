@@ -33,7 +33,6 @@ def _make_config(product_target: int = 100) -> PipelineConfig:
         domain_url="https://www.buscalibre.cl/",
         category_url="https://www.buscalibre.cl/libros/arte",
         product_target=product_target,
-        product_per_page=50,
         delay_min=0.0,
         delay_max=0.0,
         source_name="buscalibre_cl",
