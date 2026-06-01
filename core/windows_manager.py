@@ -164,7 +164,10 @@ class WindowsManager:
         wait.
         """
         try:
-            subprocess.run(
+            # Preserve DBUS/display environment vars so notify-send works
+            # when called from within Playwright context
+            env = os.environ.copy()
+            result = subprocess.run(
                 [
                     "notify-send",
                     "--urgency=critical",
@@ -176,6 +179,16 @@ class WindowsManager:
                 timeout=5,
                 check=False,
                 capture_output=True,
+                text=True,
+                env=env,
             )
+            if result.returncode != 0:
+                logger.warning(
+                    "notify-send failed with exit code %d: %s",
+                    result.returncode,
+                    result.stderr.strip() if result.stderr else "(no error message)"
+                )
+            else:
+                logger.info("CAPTCHA notification sent successfully.")
         except Exception as e:
-            logger.debug("Could not fire CAPTCHA notification: %s", e)
+            logger.warning("Could not fire CAPTCHA notification: %s", e)
