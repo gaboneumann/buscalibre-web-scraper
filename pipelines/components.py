@@ -285,7 +285,7 @@ class WebCrawler:
             session_policy: SessionRotationPolicy instance.
             block_policy: BlockDetectionPolicy instance.
             delay_policy: DelayPolicy instance.
-            config: PipelineConfig instance with product_target, product_per_page, category_url.
+            config: PipelineConfig instance with product_target, category_url.
         """
         self.client = client
         self.extract_fn = extract_fn

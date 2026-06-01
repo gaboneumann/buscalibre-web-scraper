@@ -30,7 +30,6 @@ DELAY_RECOVERY_MAX = 25.0
 # Scraping volume limits
 # Optional stop cap: >0 stops the crawler after this many products; 0 = no cap (crawl until empty page).
 PRODUCT_TARGET = 0
-PRODUCT_PER_PAGE = 200
 
 # Data export settings
 SOURCE_NAME = "buscalibre_cl"

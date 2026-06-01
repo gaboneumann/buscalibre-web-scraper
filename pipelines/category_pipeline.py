@@ -21,7 +21,6 @@ from config.settings import (
     SOURCE_NAME,
     OUTPUT_PATH,
     PRODUCT_TARGET,
-    PRODUCT_PER_PAGE
 )
 from pipelines.base_pipeline import BasePipeline
 from pipelines.config import PipelineConfig

@@ -17,7 +17,6 @@ class PipelineConfig:
         domain_url: str,
         category_url: str,
         product_target: int,
-        product_per_page: int,
         delay_min: float,
         delay_max: float,
         source_name: str,
@@ -33,7 +32,6 @@ class PipelineConfig:
             domain_url: Base domain URL.
             category_url: Category page URL.
             product_target: Optional stop cap. When > 0, the crawler stops after reaching this many products. Set to 0 to disable and crawl until the category is exhausted.
-            product_per_page: Products per category page.
             delay_min: Minimum delay between requests.
             delay_max: Maximum delay between requests.
             source_name: Source identifier for CSV.
@@ -46,7 +44,6 @@ class PipelineConfig:
         self.domain_url = domain_url
         self.category_url = category_url
         self.product_target = product_target
-        self.product_per_page = product_per_page
         self.delay_min = delay_min
         self.delay_max = delay_max
         self.source_name = source_name
@@ -70,7 +67,6 @@ class PipelineConfig:
             domain_url=settings.DOMAIN_URL,
             category_url=settings.CATEGORY_URL,
             product_target=settings.PRODUCT_TARGET,
-            product_per_page=settings.PRODUCT_PER_PAGE,
             delay_min=settings.DELAY_MIN,
             delay_max=settings.DELAY_MAX,
             source_name=settings.SOURCE_NAME,
@@ -96,7 +92,6 @@ class PipelineConfig:
             domain_url=data["domain_url"],
             category_url=data["category_url"],
             product_target=data["product_target"],
-            product_per_page=data["product_per_page"],
             delay_min=data["delay_min"],
             delay_max=data["delay_max"],
             source_name=data["source_name"],

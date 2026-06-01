@@ -273,7 +273,6 @@ DOMAIN_URL = 'https://www.buscalibre.cl/'
 CATEGORY_URL = 'https://www.buscalibre.cl/libros/arte'
 
 PRODUCT_TARGET = 100          # Books to extract
-PRODUCT_PER_PAGE = 50         # Items per category page
 REQUEST_TIMEOUT = 20          # Playwright uses timeout * 3000ms internally
 
 DELAY_MIN = 4.0               # Minimum delay between products (seconds, base — Layer 8 scales up)
