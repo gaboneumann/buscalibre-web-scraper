@@ -157,4 +157,7 @@ def run() -> int:
         config.output_path = f"storage/outputs/books_{category_name}.csv"
 
     pipeline = CategoryPipeline(client=client, config=config)
-    return pipeline.run()
+    try:
+        return pipeline.run()
+    finally:
+        client.close()

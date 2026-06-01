@@ -28,9 +28,14 @@ class TestWebCrawlerIntegration:
             output_path="test.csv"
         )
 
-        # Mock extraction and transformation
+        # Mock extraction and transformation — return links on page 1, empty on page 2
+        page_calls = [0]
+
         def mock_extract(html):
-            return ["/product/1", "/product/2"]
+            page_calls[0] += 1
+            if page_calls[0] == 1:
+                return ["/product/1", "/product/2"]
+            return []
 
         def mock_transform(html):
             return {"title": "Book", "price": 100}
@@ -110,9 +115,18 @@ class TestWebCrawlerIntegration:
         block_policy = BlockDetectionPolicy(threshold=3)
         delay_policy = DelayPolicy(delay_min=0.01, delay_max=0.02)
 
+        # extract_fn returns one link on first call, then empty to terminate
+        _policy_call = [0]
+
+        def _extract_once(html):
+            _policy_call[0] += 1
+            if _policy_call[0] == 1:
+                return ["/product/1"]
+            return []
+
         crawler = WebCrawler(
             client=mock_client,
-            extract_fn=lambda x: ["/product/1"],
+            extract_fn=_extract_once,
             transform_fn=lambda x: {"title": "Book"},
             checkpoint_mgr=mock_checkpoint_mgr,
             session_policy=session_policy,
@@ -178,7 +192,9 @@ class TestWebCrawlerIntegration:
         def mock_extract(html):
             nonlocal extract_counter
             extract_counter += 1
-            return [f"/product/{extract_counter}"]
+            if extract_counter <= 1:
+                return [f"/product/{extract_counter}"]
+            return []
 
         mock_client = Mock()
         mock_client.navigate_to_category.side_effect = flaky_get

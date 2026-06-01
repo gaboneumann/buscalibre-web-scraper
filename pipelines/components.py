@@ -263,14 +263,14 @@ class WebCrawler:
 
         success_count = len(scraped_urls)
         if success_count > 0:
-            logger.info("Resuming from checkpoint: %s/%s already scraped.", success_count, self.config.product_target)
+            logger.info("Resuming from checkpoint: %s already scraped.", success_count)
 
         books_in_session = 0
         blocks_in_batch = 0
         successful_in_batch = 0
         page_index = 1
 
-        while success_count < self.config.product_target:
+        while True:
             logger.info("BATCH: Category Page %s", page_index)
             self.client.reset_session()
 
@@ -290,6 +290,11 @@ class WebCrawler:
                 continue
 
             links = self.extract_fn(html_cat)
+
+            if not links:
+                logger.info("Empty page at page %d — category exhausted.", page_index)
+                break
+
             self.block_policy.on_success()
             successful_in_batch += 1
 
@@ -297,9 +302,6 @@ class WebCrawler:
             logger.debug("Links on page %s shuffled.", page_index)
 
             for link in links:
-                if success_count >= self.config.product_target:
-                    break
-
                 full_link = link if link.startswith("http") else f"https://www.buscalibre.cl{link}"
                 if full_link in scraped_urls:
                     continue
@@ -314,7 +316,7 @@ class WebCrawler:
                     self.client.get(build_page(self.config.category_url, page_index), request_type="category")
                     self.delay_policy.wait_post_rotation()
 
-                logger.info("[%s/%s] Extracting: %s", success_count + 1, self.config.product_target, full_link)
+                logger.info("[%s] Extracting: %s", success_count + 1, full_link)
                 html_prod = self.client.get(full_link, request_type="product")
 
                 if html_prod is None:
@@ -351,6 +353,10 @@ class WebCrawler:
                     successful_in_batch += 1
                     logger.log(SUCCESS, "Saved: %s", record['title'][:30])
 
+                    if self.config.product_target > 0 and success_count >= self.config.product_target:
+                        logger.info("TARGET REACHED: %s products. Stopping.", success_count)
+                        return success_count
+
                 self.delay_policy.wait_between_products()
 
                 # Coffee break logic
@@ -368,11 +374,9 @@ class WebCrawler:
                 logger.info("TRIGGERS: %s sucessos sin bloques, aumentando PRODUCT_PER_PAGE...", successful_in_batch)
                 self.config.adapt_product_per_page(1.10)  # +10%
 
-            # Move to next page if not yet at target
-            if success_count < self.config.product_target:
-                page_index += 1
-                logger.info("Batch complete. Waiting before next page...")
-                self.delay_policy.wait_between_pages()
+            page_index += 1
+            logger.info("Batch complete. Waiting before next page...")
+            self.delay_policy.wait_between_pages()
 
             # Reset batch counters for next iteration
             blocks_in_batch = 0

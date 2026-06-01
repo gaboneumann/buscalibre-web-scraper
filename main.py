@@ -34,9 +34,12 @@ def main(config=None):
         if config:
             # Use provided config (for advanced usage)
             client = HTTPClient(download_strategy=config.download_strategy)
-            pipeline = CategoryPipeline(client=client, config=config)
-            count = pipeline.run()
-            logger.info("Process completed. Scraped %s products.", count)
+            try:
+                pipeline = CategoryPipeline(client=client, config=config)
+                count = pipeline.run()
+                logger.info("Process completed. Scraped %s products.", count)
+            finally:
+                client.close()
         else:
             # Use default from_settings
             count = run()

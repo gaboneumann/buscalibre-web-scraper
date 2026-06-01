@@ -1,8 +1,9 @@
 """
-Parser module for extracting product links from category pages.
+Parser module for extracting product links and metadata from category pages.
 """
 
 from bs4 import BeautifulSoup
+
 
 def parse_product_links(html: str) -> list[str]:
     """

@@ -32,7 +32,7 @@ class PipelineConfig:
         Args:
             domain_url: Base domain URL.
             category_url: Category page URL.
-            product_target: Number of products to scrape.
+            product_target: Optional stop cap. When > 0, the crawler stops after reaching this many products. Set to 0 to disable and crawl until the category is exhausted.
             product_per_page: Products per category page.
             delay_min: Minimum delay between requests.
             delay_max: Maximum delay between requests.
