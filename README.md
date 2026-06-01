@@ -65,33 +65,41 @@ BuscaLibre uses **AWS WAF** with two challenge types: `challenge.js` (auto-resol
 
 ```
 buscalibre-web-scraper/
-├── main.py                      # Entry point (CLI + config handling)
+├── main.py                          # Entry point (CLI + config handling)
 ├── config/
-│   ├── settings.py              # Default configuration
-│   └── headers.py               # Dynamic request headers (request-type aware)
+│   ├── settings.py                  # Default configuration constants
+│   ├── headers.py                   # Dynamic request headers (request-type aware)
+│   └── logging_config.py            # Logging setup (levels, formatting)
 ├── core/
-│   ├── client.py                # HTTPClient (Playwright + session rotation)
-│   ├── parser.py                # Extract product links from category
-│   ├── parser_product.py        # Extract title/author/price/stock
-│   └── paginator.py             # Build paginated category URLs
+│   ├── client.py                    # HTTPClient (Playwright, session rotation, strategy injection)
+│   ├── parser.py                    # Extract product links from category pages
+│   ├── parser_product.py            # Extract title/author/price/stock from product pages
+│   └── paginator.py                 # Build paginated category URLs
 ├── pipelines/
-│   ├── base_pipeline.py         # Abstract base pipeline class
-│   ├── category_pipeline.py     # Generic Buscalibre category scraper
-│   ├── config.py                # PipelineConfig (dependency injection)
-│   ├── schema.py                # CSVSchema + CheckpointManager
-│   ├── components.py            # Policies + WebCrawler
-│   └── strategies.py            # DownloadStrategy implementations
+│   ├── base_pipeline.py             # Abstract base pipeline class
+│   ├── category_pipeline.py         # Generic Buscalibre category scraper
+│   ├── config.py                    # PipelineConfig (dependency injection container)
+│   ├── schema.py                    # CSVSchema + CheckpointManager (checkpoint/resume)
+│   ├── components.py                # Policies (SessionRotation, BlockDetection, Delay, Adaptive)
+│   └── strategies.py                # DownloadStrategy (AntiDetection, NoOp)
 ├── storage/
-│   └── outputs/                 # CSV output directory (auto-created)
+│   └── outputs/                     # CSV output directory (auto-created)
 ├── tests/
-│   ├── parsers/                 # Parser unit tests + fixtures
-│   ├── pipelines/               # Pipeline tests
-│   ├── fixtures/                # HTML test data
-│   └── conftest.py              # Pytest configuration
+│   ├── client/                      # HTTPClient unit tests + mocks
+│   ├── components/                  # Policies & WebCrawler tests
+│   ├── config/                      # PipelineConfig & ConfigLoading tests
+│   ├── parsers/                     # Parser unit tests + fixtures
+│   ├── paginator/                   # Paginator tests
+│   ├── pipelines/                   # Pipeline integration tests
+│   ├── strategies/                  # Strategy tests (NoOp, AntiDetection)
+│   ├── fixtures/                    # HTML test data (reusable across test suites)
+│   ├── test_e2e_with_noop_strategy.py      # Full E2E pipeline tests
+│   └── test_regression_orchestrator_output.py # Regression suite
 ├── docs/
-│   ├── TECHNICAL.md             # Architecture & design
-│   └── MIGRATION.md             # Refactor phases
-└── requirements.txt             # Dependencies
+│   ├── TECHNICAL.md                 # Full architecture, 8 anti-detection layers, data flow
+│   ├── MIGRATION.md                 # Web Crawler architecture refactor phases (1-6)
+│   └── feature_update.md            # Feature changelog and updates
+└── requirements.txt                 # Python dependencies
 ```
 
 ---
@@ -147,7 +155,6 @@ python main.py --config config.json --target 150     # Combine both
   "domain_url": "https://www.buscalibre.cl/",
   "category_url": "https://www.buscalibre.cl/libros/arte",
   "product_target": 100,
-  "product_per_page": 50,
   "delay_min": 4.0,
   "delay_max": 8.0,
   "source_name": "buscalibre_cl",
@@ -159,37 +166,58 @@ python main.py --config config.json --target 150     # Combine both
 
 ## Two-Level Web Crawler Structure
 
-The scraper implements a **pluggable web crawler architecture** with intelligent policies:
+The scraper implements a **two-level nested iteration** with intelligent batch-aware policies:
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│         WebCrawler (Main Crawler Engine)        │
-├─────────────────────────────────────────────────────────┤
-│  Extract (collect_product_links)                        │
-│  ↓                                                      │
-│  Transform (parse_product)                              │
-│  ↓                                                      │
-│  Load (CheckpointManager.save_record + CSV append)      │
-├─────────────────────────────────────────────────────────┤
-│  Policies (pluggable):                                  │
-│  • SessionRotationPolicy (10–15 products/session)       │
-│  • BlockDetectionPolicy (exponential backoff)           │
-│  • DelayPolicy (inter-request + coffee breaks)          │
-├─────────────────────────────────────────────────────────┤
-│  Strategies (pluggable):                                │
-│  • AntiDetectionStrategy (real delays, WAF bypass)      │
-│  • NoOpStrategy (instant fixtures for testing)          │
-└─────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                    WebCrawler.run()                              │
+├──────────────────────────────────────────────────────────────────┤
+│  OUTER LOOP: Category Pages (page_index = 1, 2, 3, ...)          │
+│  ├─ Reset session (fresh cookies/fingerprint)                    │
+│  ├─ Navigate: category?page=N                                    │
+│  ├─ LEVEL 1 - Extract: collect_product_links(html) → List[url]  │
+│  │                                                                │
+│  │  INNER LOOP: Products on this page                            │
+│  │  ├─ Skip if in checkpoint (deduplication)                     │
+│  │  ├─ Check: should_rotate(books_in_session)?                   │
+│  │  │   └─ If YES: reset_session() + rotation_wait()             │
+│  │  │                                                             │
+│  │  ├─ Fetch: client.get(product_url)                            │
+│  │  │   └─ 202 block? → exponential_backoff() + retry            │
+│  │  │                                                             │
+│  │  ├─ LEVEL 2 - Transform: parse_product(html) → Dict           │
+│  │  ├─ LEVEL 3 - Load: save_record() + checkpoint_mgr            │
+│  │  ├─ wait_between_products() [4–8s + multiplier×]              │
+│  │  ├─ Check: should_take_coffee_break()? → wait 150–250s        │
+│  │  └─ Check: product_target reached? → STOP                     │
+│  │                                                                │
+│  ├─ [BATCH SUMMARY] blocks vs successes in this page             │
+│  ├─ Layer 8: Adaptive Delay Backoff                              │
+│  │   └─ block_rate = blocks / (blocks + successes)               │
+│  │   └─ Update multiplier (1.0–3.0×) for next page delays        │
+│  ├─ wait_between_pages()                                         │
+│  └─ Reset batch counters → page_index++                          │
+│                                                                   │
+└──────────────────────────────────────────────────────────────────┘
 ```
+
+### Data Flow: Extract → Transform → Load
+
+1. **Extract** (Level 1): `extract_fn(html)` → finds all `<a href="/libro-...">` links on category page
+2. **Transform** (Level 2): `transform_fn(html)` → parses title, author, price, stock from product page
+3. **Load** (Level 3): `checkpoint_mgr.save_record()` → appends validated record to CSV + updates in-memory scraped_urls set
 
 ### Key Components
 
-- **WebCrawler**: Two-level iteration (categories → products) with retry, block detection, session rotation, and dynamic adaptation.
-- **PipelineConfig**: Dependency injection container. Replaces global settings, enables testability and multi-target scraping.
-- **Download Strategies**: Pluggable HTTP handling (real browser vs. test fixtures).
-- **Policies**: Reusable, configurable policies for sessions, blocks, and delays.
-- **CheckpointManager**: Manages CSV state for resume capability and deduplication.
-- **CSVSchema**: Validates parsed product data and normalizes fields.
+- **WebCrawler**: Orchestrates two-level iteration with **batch-aware policies**: after each category page (batch), analyzes block_rate and adjusts delay multiplier (Layer 8).
+- **PipelineConfig**: Dependency injection container with `product_target` (hard cap on total products scraped), `category_url`, delays, and output path.
+- **Policies** (pluggable, reusable):
+  - **SessionRotationPolicy**: Tracks products per session; on threshold (10–15), rotates and waits 10–15s
+  - **BlockDetectionPolicy**: Tracks consecutive 202s; exponential backoff (45s → 90s → 180s); auto-abort after 3 consecutive
+  - **DelayPolicy**: Inter-request delays (4–8s), coffee breaks (150–250s every 10–15 products), multiplier-aware
+- **Download Strategies**: Pluggable HTTP handlers (`AntiDetectionStrategy` with real browser; `NoOpStrategy` with instant fixtures)
+- **CheckpointManager**: Reads existing CSV → extracts scraped URLs → prevents duplicate processing on resume
+- **CSVSchema**: Validates parsed product data before writing
 
 ---
 
