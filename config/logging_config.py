@@ -44,8 +44,10 @@ def setup_logging() -> None:
     level_name = os.environ.get("SCRAPER_LOG_LEVEL", "INFO").upper()
     level = getattr(logging, level_name, logging.INFO)
 
-    fmt = "%(asctime)s %(levelname)s  %(message)s"
-    datefmt = "%H:%M:%S"
+    # fmt = "%(asctime)s %(levelname)s  %(message)s"
+    # datefmt = "%H:%M:%S"
+    fmt = "%(levelname)s  %(message)s"
+    datefmt = None
 
     use_color = False
     try:
@@ -53,7 +55,11 @@ def setup_logging() -> None:
     except Exception:
         pass
 
-    formatter = ColoredFormatter(fmt=fmt, datefmt=datefmt) if use_color else logging.Formatter(fmt=fmt, datefmt=datefmt)
+    formatter = (
+        ColoredFormatter(fmt=fmt, datefmt=datefmt)
+        if use_color
+        else logging.Formatter(fmt=fmt, datefmt=datefmt)
+    )
 
     handler = logging.StreamHandler(sys.stdout)
     handler.setLevel(level)
