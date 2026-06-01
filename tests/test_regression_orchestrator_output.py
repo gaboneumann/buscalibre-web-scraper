@@ -94,16 +94,16 @@ class TestOrchestratorRegressionOutput:
             block_policy = BlockDetectionPolicy()
             delay_policy = DelayPolicy()
 
-            # Session rotation: 2-4 products
-            assert session_policy._threshold >= 2
-            assert session_policy._threshold <= 4
+            # Session rotation: 10-15 products
+            assert session_policy._threshold >= 10
+            assert session_policy._threshold <= 15
 
             # Block detection: 3 consecutive failures
             assert block_policy._threshold == 3
 
-            # Delays: 8-15s between products, 150-250s coffee breaks
-            assert delay_policy._delay_min >= 8
-            assert delay_policy._delay_max <= 15
+            # Delays: 4-8s between products, 150-250s coffee breaks
+            assert delay_policy._delay_min >= 4
+            assert delay_policy._delay_max <= 8
 
     def test_csv_data_types_are_correct(self, test_config):
         """CSV data contains correct types (stock as boolean, etc.)."""
