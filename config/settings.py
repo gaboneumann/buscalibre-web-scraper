@@ -12,7 +12,7 @@
 #   pipeline = CategoryPipeline(client=client, config=config)
 
 DOMAIN_URL = "https://www.buscalibre.cl/"
-CATEGORY_URL = "https://www.buscalibre.cl/libros/medicina"
+CATEGORY_URL = "https://www.buscalibre.cl/libros/ciencias-economicas"
 
 # HTTP request settings
 REQUEST_TIMEOUT = 20
@@ -29,7 +29,7 @@ DELAY_RECOVERY_MAX = 25.0
 
 # Scraping volume limits
 # Optional stop cap: >0 stops the crawler after this many products; 0 = no cap (crawl until empty page).
-PRODUCT_TARGET = 100
+PRODUCT_TARGET = 0
 PRODUCT_PER_PAGE = 200
 
 # Data export settings
