@@ -4,7 +4,7 @@ import random
 import time
 from typing import Tuple, Optional, Dict, List, Callable
 from config import settings
-from config.logging_config import SUCCESS
+from config.logging_config import EXTRACTED
 from pipelines.schema import CheckpointManager
 
 logger = logging.getLogger(__name__)
@@ -362,7 +362,7 @@ class WebCrawler:
                     self.client.get(build_page(self.config.category_url, page_index), request_type="category")
                     self.delay_policy.wait_post_rotation()
 
-                logger.info("[%s] Extracting: %s", success_count + 1, full_link)
+                logger.log(EXTRACTED, "[%s] Extracting: %s", success_count + 1, full_link)
                 html_prod = self.client.get(full_link, request_type="product")
 
                 if html_prod is None:
@@ -397,7 +397,6 @@ class WebCrawler:
                     success_count += 1
                     books_in_session += 1
                     successful_in_batch += 1
-                    logger.log(SUCCESS, "Saved: %s", record['title'][:30])
 
                     if self.config.product_target > 0 and success_count >= self.config.product_target:
                         logger.info("TARGET REACHED: %s products. Stopping.", success_count)
