@@ -4,7 +4,7 @@ import random
 import time
 from typing import Tuple, Optional, Dict, List, Callable
 from config import settings
-from config.logging_config import SUCCESS
+from config.logging_config import EXTRACTED
 from pipelines.schema import CheckpointManager
 
 logger = logging.getLogger(__name__)
@@ -397,7 +397,7 @@ class WebCrawler:
                     success_count += 1
                     books_in_session += 1
                     successful_in_batch += 1
-                    logger.log(SUCCESS, "Saved: %s", record['title'][:30])
+                    logger.log(EXTRACTED, "[%s] : %s", success_count, record['title'])
 
                     if self.config.product_target > 0 and success_count >= self.config.product_target:
                         logger.info("TARGET REACHED: %s products. Stopping.", success_count)
