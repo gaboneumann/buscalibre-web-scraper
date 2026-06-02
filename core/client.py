@@ -20,6 +20,11 @@ from core.windows_manager import WindowsManager
 
 logger = logging.getLogger(__name__)
 
+# Stable WM_CLASS for the browser window. The GNOME "Auto Move Windows"
+# extension matches this exact string (via a .desktop StartupWMClass) to pin
+# the window to a fixed workspace. Keep in sync with that desktop entry.
+BROWSER_WM_CLASS = "BuscaLibreScraper"
+
 
 class HTTPClient:
     """
@@ -67,7 +72,14 @@ class HTTPClient:
             # so it doesn't pop up over whatever is on the primary monitor.
             # --start-maximized fills that monitor; verified to coexist with
             # --window-position under XWayland (--ozone-platform=x11).
-            launch_args = ["--ozone-platform=x11"]
+            #
+            # --class=BuscaLibreScraper pins a STABLE WM_CLASS on the window
+            # (Playwright's default WM_CLASS embeds a random profile path, which
+            # is unusable as a match key). The GNOME "Auto Move Windows"
+            # extension matches this class and places the window on the
+            # configured workspace at creation time. DO NOT change this string
+            # without updating the extension's application-list rule.
+            launch_args = ["--ozone-platform=x11", f"--class={BROWSER_WM_CLASS}"]
             secondary = self._wm.detect_secondary_monitor()
             if secondary and len(secondary) == 4:
                 x, y, _, _ = secondary
@@ -111,11 +123,9 @@ class HTTPClient:
         self._context = self._browser.new_context(user_agent=CHROME_120_UA, no_viewport=True)
         self._page = self._context.new_page()
 
-        # Allow WM to register the new browser window before xdotool can find it
-        time.sleep(1)
-
-        # Pin window to terminal's workspace after rotation
-        self._wm.pin_window()
+        # Workspace placement is handled by the GNOME Auto Move Windows
+        # extension at window-creation time (matched via --class=BuscaLibreScraper).
+        # No post-creation move here — that would cause appear-then-move flicker.
 
         # Restore WAF token so CAPTCHA doesn't re-trigger
         if self._waf_token:
@@ -134,7 +144,6 @@ class HTTPClient:
 
             if "Human Verification" in self._page.title():
                 logger.warning("CAPTCHA detected — please solve it in the browser window...")
-                self._wm.pin_window()
                 self._wm.notify_captcha()
                 logger.info("Waiting for CAPTCHA solution (timeout: %dms = %.1f min)...", CAPTCHA_SOLVE_TIMEOUT_MS, CAPTCHA_SOLVE_TIMEOUT_MS / 60000)
                 self._page.wait_for_function(
