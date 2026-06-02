@@ -17,6 +17,11 @@ CATEGORY_URL = "https://www.buscalibre.cl/libros/ciencias-economicas"
 # HTTP request settings
 REQUEST_TIMEOUT = 20
 
+# WAF CAPTCHA solving timeout (in milliseconds)
+# Set higher if you need more time to manually solve the CAPTCHA challenge
+# Default: 600000ms = 10 minutes
+CAPTCHA_SOLVE_TIMEOUT_MS = 600000
+
 # Rate limiting delays (in seconds) - ANTI-DETECTION: DO NOT REDUCE
 # - Normal inter-request delay: 4-8 seconds (happy path)
 # - Recovery delay after error (202/405): 15-25 seconds (post-error backoff)

@@ -11,7 +11,8 @@ from typing import Tuple, Optional
 from playwright.sync_api import sync_playwright
 from config.settings import (
     DOMAIN_URL, CATEGORY_URL, REQUEST_TIMEOUT,
-    DELAY_MIN, DELAY_MAX, DELAY_RECOVERY_MIN, DELAY_RECOVERY_MAX
+    DELAY_MIN, DELAY_MAX, DELAY_RECOVERY_MIN, DELAY_RECOVERY_MAX,
+    CAPTCHA_SOLVE_TIMEOUT_MS
 )
 from config.headers import CHROME_120_UA
 from urllib.parse import urljoin
@@ -135,9 +136,10 @@ class HTTPClient:
                 logger.warning("CAPTCHA detected — please solve it in the browser window...")
                 self._wm.pin_window()
                 self._wm.notify_captcha()
+                logger.info("Waiting for CAPTCHA solution (timeout: %dms = %.1f min)...", CAPTCHA_SOLVE_TIMEOUT_MS, CAPTCHA_SOLVE_TIMEOUT_MS / 60000)
                 self._page.wait_for_function(
                     "document.title !== 'Human Verification'",
-                    timeout=180000
+                    timeout=CAPTCHA_SOLVE_TIMEOUT_MS
                 )
                 logger.info("CAPTCHA solved!")
 
