@@ -348,7 +348,6 @@ Unit tests with HTML fixtures validate parser behavior deterministically. `core/
 Comprehensive docs organized in [`docs/`](docs/):
 
 - **[docs/TECHNICAL.md](docs/TECHNICAL.md)**: full architecture, 8 anti-detection layers, data flow
-- **[docs/MIGRATION.md](docs/MIGRATION.md)**: Web Crawler Architecture Refactor (Phases 1-6)
 
 ---
 
