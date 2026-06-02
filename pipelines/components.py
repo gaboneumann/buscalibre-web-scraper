@@ -387,10 +387,9 @@ class WebCrawler:
                         "title": data["title"],
                         "author": data.get("author", "Anonymous"),
                         "price": data.get("price"),
-                        "stock": data.get("stock_status") == "in_stock",
+                        "stock": data.get("stock_quantity", 0),
                         "page_index": page_index,
                         "product_url": full_link,
-                        "source": self.config.source_name,
                     }
                     self.checkpoint_mgr.save_record(record)
                     scraped_urls.add(full_link)
