@@ -354,7 +354,6 @@ class WebCrawler:
 
                 # Session rotation check
                 if self.session_policy.should_rotate(books_in_session):
-                    logger.info("Random rotation (threshold reached): Resetting session...")
                     self.client.reset_session()
                     books_in_session = 0
                     self.delay_policy.wait_session_rotation()
@@ -405,7 +404,6 @@ class WebCrawler:
 
                 # Coffee break logic
                 if self.delay_policy.should_take_coffee_break(success_count):
-                    logger.info("BREAK: User stepped away for a bit...")
                     self.delay_policy.wait_coffee_break()
 
             logger.info("BATCH SUMMARY: %s success, %s blocks", successful_in_batch, blocks_in_batch)
