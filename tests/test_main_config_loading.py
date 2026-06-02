@@ -31,7 +31,6 @@ class TestMainConfigLoading:
             "product_target": 100,
             "delay_min": 8,
             "delay_max": 15,
-            "source_name": "test",
             "output_path": "/tmp/output.csv"
         }
 
@@ -50,14 +49,12 @@ class TestMainConfigLoading:
             "product_target": 50,
             "delay_min": 8,
             "delay_max": 15,
-            "source_name": "buscalibre",
             "output_path": str(tmp_path / "output.csv")
         }
 
         with open(config_file, 'w') as f:
             json.dump(config_data, f)
 
-        # Load from JSON
         with open(config_file, 'r') as f:
             loaded_data = json.load(f)
 
@@ -77,7 +74,6 @@ class TestMainConfigLoading:
             product_target=10,
             delay_min=1,
             delay_max=2,
-            source_name="test",
             output_path=str(tmp_path / "output.csv"),
             download_strategy=strategy
         )
@@ -94,11 +90,9 @@ class TestMainConfigLoading:
             product_target=10,
             delay_min=1,
             delay_max=2,
-            source_name="test",
             output_path="/tmp/test.csv"
         )
 
-        # Should be able to pass config to pipeline
         with patch('core.client.HTTPClient'):
             with patch('pipelines.category_pipeline.CategoryPipeline.run') as mock_run:
                 from pipelines.category_pipeline import CategoryPipeline

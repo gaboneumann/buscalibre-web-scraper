@@ -35,7 +35,6 @@ def _make_config(product_target: int = 100) -> PipelineConfig:
         product_target=product_target,
         delay_min=0.0,
         delay_max=0.0,
-        source_name="buscalibre_cl",
         output_path="storage/outputs/books.csv",
     )
 

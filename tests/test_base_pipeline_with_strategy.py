@@ -17,7 +17,6 @@ class TestBasePipelineStrategySupport:
             product_target=10,
             delay_min=1,
             delay_max=2,
-            source_name="test",
             output_path="/tmp/test.csv",
             download_strategy=mock_strategy
         )
@@ -31,7 +30,6 @@ class TestBasePipelineStrategySupport:
             product_target=10,
             delay_min=1,
             delay_max=2,
-            source_name="test",
             output_path="/tmp/test.csv"
         )
         assert config.download_strategy is None
@@ -47,7 +45,6 @@ class TestBasePipelineStrategySupport:
             product_target=10,
             delay_min=1,
             delay_max=2,
-            source_name="test",
             output_path="/tmp/test.csv",
             download_strategy=mock_strategy
         )
@@ -78,7 +75,6 @@ class TestBasePipelineStrategySupport:
             product_target=10,
             delay_min=1,
             delay_max=2,
-            source_name="test",
             output_path="/tmp/test.csv",
             download_strategy=mock_strategy
         )

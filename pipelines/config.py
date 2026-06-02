@@ -19,7 +19,6 @@ class PipelineConfig:
         product_target: int,
         delay_min: float,
         delay_max: float,
-        source_name: str,
         output_path: str,
         download_strategy=None,
         session_policy=None,
@@ -34,7 +33,6 @@ class PipelineConfig:
             product_target: Optional stop cap. When > 0, the crawler stops after reaching this many products. Set to 0 to disable and crawl until the category is exhausted.
             delay_min: Minimum delay between requests.
             delay_max: Maximum delay between requests.
-            source_name: Source identifier for CSV.
             output_path: CSV output file path.
             download_strategy: Optional DownloadStrategy for custom HTTP handling.
             session_policy: Optional SessionRotationPolicy instance.
@@ -46,7 +44,6 @@ class PipelineConfig:
         self.product_target = product_target
         self.delay_min = delay_min
         self.delay_max = delay_max
-        self.source_name = source_name
         self.output_path = output_path
         self.download_strategy = download_strategy
         self.session_policy = session_policy
@@ -69,7 +66,6 @@ class PipelineConfig:
             product_target=settings.PRODUCT_TARGET,
             delay_min=settings.DELAY_MIN,
             delay_max=settings.DELAY_MAX,
-            source_name=settings.SOURCE_NAME,
             output_path=settings.OUTPUT_PATH,
             download_strategy=None,
         )
@@ -94,7 +90,6 @@ class PipelineConfig:
             product_target=data["product_target"],
             delay_min=data["delay_min"],
             delay_max=data["delay_max"],
-            source_name=data["source_name"],
             output_path=data["output_path"],
             download_strategy=data.get("download_strategy"),
             session_policy=data.get("session_policy"),

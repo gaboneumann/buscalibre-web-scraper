@@ -13,4 +13,4 @@ def test_parse_product_integration():
     assert result["title"] == "El camino del artista"
     assert result["author"] == "Julia Cameron"
     assert result["price"] == 18630  # Correct price from the fixture file
-    assert result["stock_status"] in {"in_stock", "out_of_stock"}
+    assert isinstance(result["stock_quantity"], int) and result["stock_quantity"] >= 0

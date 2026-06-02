@@ -18,7 +18,7 @@ class ConcreteTestPipeline(BasePipeline):
 
     def get_csv_fields(self):
         """Return list of CSV field names in order."""
-        return ["title", "author", "price", "stock", "page_index", "product_url", "source"]
+        return ["title", "author", "price", "stock", "page_index", "product_url"]
 
 
 class TestBasePipelineInit:
@@ -37,7 +37,6 @@ class TestBasePipelineInit:
             product_target=100,
             delay_min=8.0,
             delay_max=15.0,
-            source_name="test",
             output_path="test.csv"
         )
 

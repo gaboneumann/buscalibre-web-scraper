@@ -23,7 +23,6 @@ class TestWebCrawlerIntegration:
             product_target=2,
             delay_min=0.1,
             delay_max=0.2,
-            source_name="test",
             output_path="test.csv"
         )
 
@@ -74,7 +73,6 @@ class TestWebCrawlerIntegration:
             product_target=500,
             delay_min=5.0,
             delay_max=10.0,
-            source_name="test_api",
             output_path="test_output.csv"
         )
 
@@ -103,7 +101,6 @@ class TestWebCrawlerIntegration:
             product_target=1,
             delay_min=0.01,
             delay_max=0.02,
-            source_name="test",
             output_path="test.csv"
         )
 
@@ -153,7 +150,6 @@ class TestWebCrawlerIntegration:
             product_target=5,
             delay_min=0.01,
             delay_max=0.02,
-            source_name="test",
             output_path="test.csv"
         )
 
@@ -207,7 +203,6 @@ class TestWebCrawlerIntegration:
             product_target=5,
             delay_min=0.01,
             delay_max=0.02,
-            source_name="test",
             output_path="test.csv"
         )
 
@@ -264,7 +259,6 @@ class TestWebCrawlerIntegration:
                 product_target=10,
                 delay_min=1.0,
                 delay_max=2.0,
-                source_name="test",
                 output_path="test.csv"
             ),
         )

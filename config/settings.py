@@ -27,17 +27,16 @@ CAPTCHA_SOLVE_TIMEOUT_MS = 600000
 # - Recovery delay after error (202/405): 15-25 seconds (post-error backoff)
 # - Coffee breaks every 10-15 products (150-250 seconds)
 # These delays are essential to avoid rate-limiting and detection.
-DELAY_MIN = 4.0
-DELAY_MAX = 8.0
-DELAY_RECOVERY_MIN = 15.0
-DELAY_RECOVERY_MAX = 25.0
+DELAY_MIN = 2.0
+DELAY_MAX = 6.0
+DELAY_RECOVERY_MIN = 10.0
+DELAY_RECOVERY_MAX = 20.0
 
 # Scraping volume limits
 # Optional stop cap: >0 stops the crawler after this many products; 0 = no cap (crawl until empty page).
 PRODUCT_TARGET = 0
 
 # Data export settings
-SOURCE_NAME = "buscalibre_cl"
 OUTPUT_PATH = "storage/outputs/books_arte.csv"
 
 # Exponential backoff bases (Phase 1: Smart Retry)

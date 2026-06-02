@@ -41,7 +41,6 @@ class TestBasePipelineWithMockedClient:
             product_target=10,
             delay_min=1.0,
             delay_max=2.0,
-            source_name="test",
             output_path="test.csv"
         )
 
@@ -59,7 +58,6 @@ class TestBasePipelineWithMockedClient:
             product_target=10,
             delay_min=1.0,
             delay_max=2.0,
-            source_name="test",
             output_path="test.csv"
         )
 
@@ -84,7 +82,6 @@ class TestBasePipelineWithMockedClient:
             product_target=10,
             delay_min=1.0,
             delay_max=2.0,
-            source_name="test",
             output_path="test.csv"
         )
 
@@ -109,7 +106,6 @@ class TestBasePipelineWithMockedClient:
             product_target=10,
             delay_min=1.0,
             delay_max=2.0,
-            source_name="test",
             output_path="test.csv"
         )
 
@@ -129,7 +125,6 @@ class TestBasePipelineWithMockedClient:
             product_target=500,
             delay_min=5.0,
             delay_max=10.0,
-            source_name="api_source",
             output_path="api_output.csv"
         )
 
@@ -138,7 +133,6 @@ class TestBasePipelineWithMockedClient:
         assert pipeline.config.domain_url == "https://api.example.com"
         assert pipeline.config.product_target == 500
         assert pipeline.config.delay_min == 5.0
-        assert pipeline.config.source_name == "api_source"
 
     def test_pipeline_run_returns_zero_from_base_implementation(self):
         """BasePipeline.run() returns 0 (stub for orchestrator setup)."""
@@ -149,7 +143,6 @@ class TestBasePipelineWithMockedClient:
             product_target=10,
             delay_min=1.0,
             delay_max=2.0,
-            source_name="test",
             output_path="test.csv"
         )
 

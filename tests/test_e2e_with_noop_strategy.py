@@ -48,7 +48,6 @@ class TestE2EWithNoOpStrategy:
             product_target=3,
             delay_min=0.001,
             delay_max=0.002,
-            source_name="test",
             output_path=str(tmp_path / "output.csv"),
             download_strategy=noop_strategy
         )
@@ -90,7 +89,7 @@ class TestE2EWithNoOpStrategy:
             reader = csv.DictReader(f)
             assert reader.fieldnames == [
                 "title", "author", "price", "stock",
-                "page_index", "product_url", "source", "category_url"
+                "page_index", "product_url"
             ]
 
     def test_e2e_noop_strategy_respects_product_target(self, test_config, tmp_path):

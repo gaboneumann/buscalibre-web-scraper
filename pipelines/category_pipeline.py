@@ -18,7 +18,6 @@ from config.settings import (
     CATEGORY_URL,
     DELAY_MIN,
     DELAY_MAX,
-    SOURCE_NAME,
     OUTPUT_PATH,
     PRODUCT_TARGET,
 )
@@ -38,7 +37,7 @@ def save_single_record(record: Dict):
     Creates output directory and CSV header if needed.
     """
     file_exists = os.path.isfile(OUTPUT_PATH)
-    fieldnames = ["title", "author", "price", "stock", "page_index", "product_url", "source"]
+    fieldnames = ["title", "author", "price", "stock", "page_index", "product_url"]
 
     target_dir = os.path.dirname(OUTPUT_PATH)
     if target_dir:
@@ -94,11 +93,11 @@ class CategoryPipeline(BasePipeline):
 
     def get_csv_fields(self) -> List[str]:
         """Return list of CSV field names in order."""
-        return ["title", "author", "price", "stock", "page_index", "product_url", "source"]
+        return ["title", "author", "price", "stock", "page_index", "product_url"]
 
     def _create_crawler(self) -> WebCrawler:
         """Create and configure web crawler engine with policies."""
-        checkpoint_mgr = CheckpointManager(self.config.output_path, category_url=self.config.category_url)
+        checkpoint_mgr = CheckpointManager(self.config.output_path)
         session_policy = self.config.session_policy or SessionRotationPolicy()
         block_policy = self.config.block_policy or BlockDetectionPolicy(
             backoff_base=45  # Exponential backoff base: 45s → 90s → 180s

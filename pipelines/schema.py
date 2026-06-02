@@ -12,7 +12,7 @@ class CSVSchema:
 
     def __init__(self):
         """Initialize schema with required field names."""
-        self._fields = ["title", "author", "price", "stock", "page_index", "product_url", "source", "category_url"]
+        self._fields = ["title", "author", "price", "stock", "page_index", "product_url"]
 
     @property
     def fields(self) -> List[str]:
@@ -56,27 +56,22 @@ class CSVSchema:
 class CheckpointManager:
     """Manages CSV checkpoint reads/writes for resume capability."""
 
-    def __init__(self, output_path: str, category_url: str = ""):
+    def __init__(self, output_path: str):
         """
         Initialize checkpoint manager.
 
         Args:
             output_path: Path to CSV file for storing product records.
-            category_url: Category URL for filtering checkpoint data by category.
         """
         self.output_path = output_path
-        self.category_url = category_url
         self.fieldnames = CSVSchema().fields
 
     def get_scraped_urls(self) -> Set[str]:
         """
-        Load already-scraped product URLs from CSV checkpoint, filtered by category.
-
-        Only returns URLs where category_url matches the current category.
-        Rows without category_url are ignored (retrocompat: old CSVs).
+        Load already-scraped product URLs from CSV checkpoint.
 
         Returns:
-            Set of product URLs already processed for this category.
+            Set of all product URLs previously written to the output CSV.
         """
         scraped_urls = set()
         if not os.path.isfile(self.output_path):
@@ -86,10 +81,9 @@ class CheckpointManager:
             with open(self.output_path, mode='r', encoding='utf-8') as f:
                 reader = csv.DictReader(f)
                 for row in reader:
-                    if row.get("category_url", "") == self.category_url:
-                        url = row.get("product_url")
-                        if url:
-                            scraped_urls.add(url.strip())
+                    url = row.get("product_url")
+                    if url:
+                        scraped_urls.add(url.strip())
         except Exception as e:
             logger.warning("Could not read checkpoint file: %s", e)
         return scraped_urls
@@ -97,12 +91,10 @@ class CheckpointManager:
     def save_record(self, record: Dict) -> None:
         """
         Write a single product record to CSV immediately (append mode).
-        Automatically adds category_url to record.
 
         Args:
             record: Dictionary with product data to save.
         """
-        record["category_url"] = self.category_url
         file_exists = os.path.isfile(self.output_path)
         target_dir = os.path.dirname(self.output_path)
         if target_dir:

@@ -34,7 +34,6 @@ class TestOrchestratorRegressionOutput:
             product_target=1,
             delay_min=0.001,
             delay_max=0.002,
-            source_name="test_source",
             output_path=str(tmp_path / "regression.csv"),
             download_strategy=simple_noop_strategy
         )
@@ -54,10 +53,12 @@ class TestOrchestratorRegressionOutput:
 
                     required = [
                         "title", "author", "price", "stock",
-                        "page_index", "product_url", "source"
+                        "page_index", "product_url"
                     ]
                     for field in required:
                         assert field in fieldnames, f"Missing column: {field}"
+                    assert "source" not in fieldnames
+                    assert "category_url" not in fieldnames
 
     def test_csv_output_column_order_matches_spec(self, test_config):
         """CSV columns are in correct order."""
@@ -72,7 +73,7 @@ class TestOrchestratorRegressionOutput:
                     reader = csv.DictReader(f)
                     expected_order = [
                         "title", "author", "price", "stock",
-                        "page_index", "product_url", "source"
+                        "page_index", "product_url"
                     ]
                     assert reader.fieldnames == expected_order
 
@@ -116,9 +117,7 @@ class TestOrchestratorRegressionOutput:
                 with open(csv_file, 'r', encoding='utf-8') as f:
                     reader = csv.DictReader(f)
                     for row in reader:
-                        # stock should be convertible to boolean
-                        assert row['stock'] in ['True', 'False']
-                        # source should be string
-                        assert isinstance(row['source'], str)
+                        # stock should be numeric (quantity as string in CSV)
+                        assert str(row['stock']).isdigit(), f"Unexpected stock value: {row['stock']}"
                         # page_index should be numeric
                         assert row['page_index'].isdigit()

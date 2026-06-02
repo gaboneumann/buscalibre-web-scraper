@@ -42,10 +42,11 @@ class TestCategoryPipelineInterface:
         fields = pipeline.get_csv_fields()
 
         assert isinstance(fields, list)
-        assert len(fields) > 0
+        assert len(fields) == 6
         assert "title" in fields
         assert "product_url" in fields
-        assert "source" in fields
+        assert "source" not in fields
+        assert "category_url" not in fields
 
 
 class TestCategoryPipelineCrawlerWiring:
@@ -58,7 +59,6 @@ class TestCategoryPipelineCrawlerWiring:
             product_target=10,
             delay_min=1.0,
             delay_max=2.0,
-            source_name="test",
             output_path="/tmp/test_pipeline.csv",
         )
         defaults.update(kwargs)

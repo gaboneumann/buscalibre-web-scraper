@@ -2,6 +2,8 @@
 import pytest
 from pipelines.schema import CSVSchema
 
+EXPECTED_FIELDS = ["title", "author", "price", "stock", "page_index", "product_url"]
+
 
 class TestCSVSchemaValidation:
     """Test CSVSchema validation logic."""
@@ -13,11 +15,9 @@ class TestCSVSchemaValidation:
             "title": "Test Book",
             "author": "Author Name",
             "price": 100.00,
-            "stock": True,
+            "stock": 1,
             "page_index": 1,
             "product_url": "https://example.com/product/1",
-            "source": "buscalibre",
-            "category_url": "https://www.buscalibre.cl/libros/ficcion",
         }
         assert schema.validate(data) is True
 
@@ -27,10 +27,9 @@ class TestCSVSchemaValidation:
         data = {
             "author": "Author Name",
             "price": 100.00,
-            "stock": True,
+            "stock": 1,
             "page_index": 1,
             "product_url": "https://example.com/product/1",
-            "source": "buscalibre",
         }
         assert schema.validate(data) is False
 
@@ -40,10 +39,9 @@ class TestCSVSchemaValidation:
         data = {
             "title": "Test Book",
             "price": 100.00,
-            "stock": True,
+            "stock": 1,
             "page_index": 1,
             "product_url": "https://example.com/product/1",
-            "source": "buscalibre",
         }
         assert schema.validate(data) is False
 
@@ -53,10 +51,9 @@ class TestCSVSchemaValidation:
         data = {
             "title": "Test Book",
             "author": "Author Name",
-            "stock": True,
+            "stock": 1,
             "page_index": 1,
             "product_url": "https://example.com/product/1",
-            "source": "buscalibre",
         }
         assert schema.validate(data) is False
 
@@ -69,7 +66,6 @@ class TestCSVSchemaValidation:
             "price": 100.00,
             "page_index": 1,
             "product_url": "https://example.com/product/1",
-            "source": "buscalibre",
         }
         assert schema.validate(data) is False
 
@@ -80,9 +76,8 @@ class TestCSVSchemaValidation:
             "title": "Test Book",
             "author": "Author Name",
             "price": 100.00,
-            "stock": True,
+            "stock": 1,
             "product_url": "https://example.com/product/1",
-            "source": "buscalibre",
         }
         assert schema.validate(data) is False
 
@@ -93,24 +88,23 @@ class TestCSVSchemaValidation:
             "title": "Test Book",
             "author": "Author Name",
             "price": 100.00,
-            "stock": True,
+            "stock": 1,
             "page_index": 1,
-            "source": "buscalibre",
         }
         assert schema.validate(data) is False
 
-    def test_validate_fails_on_missing_source(self):
-        """validate() returns False when source is missing."""
+    def test_validate_source_not_required(self):
+        """validate() returns True when source field is absent (removed from schema)."""
         schema = CSVSchema()
         data = {
             "title": "Test Book",
             "author": "Author Name",
             "price": 100.00,
-            "stock": True,
+            "stock": 1,
             "page_index": 1,
             "product_url": "https://example.com/product/1",
         }
-        assert schema.validate(data) is False
+        assert schema.validate(data) is True
 
     def test_validate_with_extra_fields(self):
         """validate() returns True when extra fields present (not in schema)."""
@@ -119,20 +113,20 @@ class TestCSVSchemaValidation:
             "title": "Test Book",
             "author": "Author Name",
             "price": 100.00,
-            "stock": True,
+            "stock": 1,
             "page_index": 1,
             "product_url": "https://example.com/product/1",
-            "source": "buscalibre",
-            "category_url": "https://www.buscalibre.cl/libros/ficcion",
             "extra_field": "ignored",
         }
         assert schema.validate(data) is True
 
     def test_validate_fields_property(self):
-        """CSVSchema.fields returns list of required field names."""
+        """CSVSchema.fields returns exactly the 6-field target list."""
         schema = CSVSchema()
-        expected = ["title", "author", "price", "stock", "page_index", "product_url", "source", "category_url"]
-        assert schema.fields == expected
+        assert schema.fields == EXPECTED_FIELDS
+        assert len(schema.fields) == 6
+        assert "source" not in schema.fields
+        assert "category_url" not in schema.fields
 
     def test_prepare_for_csv_returns_dict(self):
         """prepare_for_csv() returns a dictionary with CSV-ready values."""
@@ -141,11 +135,9 @@ class TestCSVSchemaValidation:
             "title": "Test Book",
             "author": "Author Name",
             "price": 100.00,
-            "stock": True,
+            "stock": 1,
             "page_index": 1,
             "product_url": "https://example.com/product/1",
-            "source": "buscalibre",
-            "category_url": "https://www.buscalibre.cl/libros/ficcion",
         }
         result = schema.prepare_for_csv(data)
         assert isinstance(result, dict)
@@ -159,7 +151,7 @@ class TestCSVSchemaValidation:
             "title": "Test Book",
             "author": "Author Name",
             "price": 100.00,
-            "stock": True,
+            "stock": 1,
             "page_index": 1,
             "product_url": "https://example.com/product/1",
             "source": "buscalibre",
@@ -168,22 +160,21 @@ class TestCSVSchemaValidation:
         }
         result = schema.prepare_for_csv(data)
         assert "extra_field" not in result
-        assert len(result) == 8  # Only schema fields
+        assert "source" not in result
+        assert "category_url" not in result
+        assert len(result) == 6
 
     def test_prepare_for_csv_preserves_field_order(self):
         """prepare_for_csv() returns dict with fields in schema order."""
         schema = CSVSchema()
         data = {
-            "source": "buscalibre",
-            "category_url": "https://www.buscalibre.cl/libros/ficcion",
             "product_url": "https://example.com/product/1",
             "page_index": 1,
-            "stock": True,
+            "stock": 1,
             "price": 100.00,
             "author": "Author Name",
             "title": "Test Book",
         }
         result = schema.prepare_for_csv(data)
         keys_list = list(result.keys())
-        expected_order = ["title", "author", "price", "stock", "page_index", "product_url", "source", "category_url"]
-        assert keys_list == expected_order
+        assert keys_list == EXPECTED_FIELDS
