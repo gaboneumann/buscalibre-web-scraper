@@ -279,8 +279,9 @@ DELAY_MIN = 4.0               # Minimum delay between products (seconds, base â€
 DELAY_MAX = 8.0               # Maximum delay between products (seconds, base â€” Layer 8 scales up)
 
 OUTPUT_PATH = "storage/outputs/books_arte.csv"
-SOURCE_NAME = "buscalibre_cl"
 ```
+
+**Output fields:** `title, author, price, stock, page_index, product_url`. The `stock` column holds the available stock (integer count of units in stock, parsed from "Quedan N unidades").
 
 ---
 

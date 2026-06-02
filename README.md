@@ -74,7 +74,8 @@ buscalibre-web-scraper/
 │   ├── client.py                    # HTTPClient (Playwright, session rotation, strategy injection)
 │   ├── parser.py                    # Extract product links from category pages
 │   ├── parser_product.py            # Extract title/author/price/stock from product pages
-│   └── paginator.py                 # Build paginated category URLs
+│   ├── paginator.py                 # Build paginated category URLs
+│   └── windows_manager.py           # Desktop helpers: monitor detection + CAPTCHA notification
 ├── pipelines/
 │   ├── base_pipeline.py             # Abstract base pipeline class
 │   ├── category_pipeline.py         # Generic Buscalibre category scraper
@@ -122,7 +123,7 @@ python main.py                       # run (solve the CAPTCHA when the browser o
 
 **Output:** CSV file with auto-generated name based on category (e.g., `storage/outputs/books_arte.csv`).
 
-**Fields:** `title, author, price, stock, page_index, product_url, source, category_url`
+**Fields:** `title, author, price, stock, page_index, product_url` — where `stock` is the available stock (integer count of units in stock, parsed from "Quedan N unidades").
 
 ---
 
@@ -136,7 +137,6 @@ CATEGORY_URL = "https://www.buscalibre.cl/libros/arte"
 PRODUCT_TARGET = 100
 DELAY_MIN = 4.0
 DELAY_MAX = 8.0
-SOURCE_NAME = "buscalibre_cl"
 OUTPUT_PATH = "storage/outputs/books.csv"
 ```
 
@@ -157,7 +157,6 @@ python main.py --config config.json --target 150     # Combine both
   "product_target": 100,
   "delay_min": 4.0,
   "delay_max": 8.0,
-  "source_name": "buscalibre_cl",
   "output_path": "storage/outputs/books.csv"
 }
 ```
@@ -204,7 +203,7 @@ The scraper implements a **two-level nested iteration** with intelligent batch-a
 ### Data Flow: Extract → Transform → Load
 
 1. **Extract** (Level 1): `extract_fn(html)` → finds all `<a href="/libro-...">` links on category page
-2. **Transform** (Level 2): `transform_fn(html)` → parses title, author, price, stock from product page
+2. **Transform** (Level 2): `transform_fn(html)` → parses title, author, price, available stock from product page
 3. **Load** (Level 3): `checkpoint_mgr.save_record()` → appends validated record to CSV + updates in-memory scraped_urls set
 
 ### Key Components
