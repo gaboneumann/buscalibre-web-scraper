@@ -419,9 +419,6 @@ class WebCrawler:
             else:
                 block_rate = blocks_in_batch / total
                 new_multiplier = self.delay_policy.update_multiplier(block_rate)
-                logger.info(
-                    "LAYER 8: block_rate=%.2f → multiplier=%.2f", block_rate, new_multiplier
-                )
 
             page_index += 1
             logger.info("Batch complete. Waiting before next page...")
