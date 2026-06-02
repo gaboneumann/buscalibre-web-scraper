@@ -7,13 +7,13 @@ import sys
 _RESET = "\033[0m"
 
 # Custom log level for successful data extraction
-SUCCESS = 25
-logging.addLevelName(SUCCESS, "SUCCESS")
+EXTRACTED = 25
+logging.addLevelName(EXTRACTED, "EXTRACTED")
 
 _LEVEL_COLORS = {
     logging.DEBUG: "\033[90m",
     logging.INFO: "\033[32m",
-    SUCCESS: "\033[36m",
+    EXTRACTED: "\033[36m",
     logging.WARNING: "\033[33m",
     logging.ERROR: "\033[31m",
     logging.CRITICAL: "\033[35m",
