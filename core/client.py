@@ -73,12 +73,12 @@ class HTTPClient:
             # --start-maximized fills that monitor; verified to coexist with
             # --window-position under XWayland (--ozone-platform=x11).
             #
-            # --class=BuscaLibreScraper pins a STABLE WM_CLASS on the window
-            # (Playwright's default WM_CLASS embeds a random profile path, which
-            # is unusable as a match key). The GNOME "Auto Move Windows"
-            # extension matches this class and places the window on the
-            # configured workspace at creation time. DO NOT change this string
-            # without updating the extension's application-list rule.
+            # --class=BuscaLibreScraper gives the window a stable WM_CLASS
+            # (Playwright's default embeds a random profile path). The window is
+            # created ONCE and lives on whatever workspace the scraper is
+            # launched from; it is never sticky and never recreated, so it stays
+            # put without disturbing other workspaces. No window manager rule is
+            # required for this to work.
             launch_args = ["--ozone-platform=x11", f"--class={BROWSER_WM_CLASS}"]
             secondary = self._wm.detect_secondary_monitor()
             if secondary and len(secondary) == 4:
@@ -101,8 +101,8 @@ class HTTPClient:
         return (DELAY_MIN, DELAY_MAX)
 
     def reset_session(self):
-        """Rotate session identity (new context = new cookies/fingerprint).
-        Reuses the cached aws-waf-token to skip CAPTCHA on subsequent rotations.
+        """Rotate session identity by clearing the cookie jar (keeping the WAF
+        token), reusing the SINGLE persistent browser window.
         No-op when the active strategy needs no browser.
         """
         if self._strategy is not None and not self._strategy.requires_browser:
@@ -111,21 +111,30 @@ class HTTPClient:
         self._initialize_session()
 
     def _rotate_context(self):
-        """Close current context and open a fresh one, restoring the WAF token."""
-        if self._context:
-            try:
-                self._context.close()
-            except Exception:
-                pass
+        """Rotate session identity WITHOUT opening a new OS window.
 
-        # no_viewport=True lets the page fill the maximized window instead of
-        # Playwright's default fixed 1280x720 viewport.
-        self._context = self._browser.new_context(user_agent=CHROME_120_UA, no_viewport=True)
-        self._page = self._context.new_page()
+        In headed Chromium, every new BrowserContext spawns a new top-level
+        window. That window steals focus and — with a workspace-pinning rule —
+        drags the operator to the browser's workspace on every rotation,
+        disrupting unrelated work. So the window is created ONCE and never
+        recreated; rotation just drops the cookie jar in place.
 
-        # Workspace placement is handled by the GNOME Auto Move Windows
-        # extension at window-creation time (matched via --class=BuscaLibreScraper).
-        # No post-creation move here — that would cause appear-then-move flicker.
+        Anti-detection note: the original rotation created a fresh context
+        (new cookies + storage) but the browser fingerprint never changed
+        (fixed Chrome 120 UA, same process). The meaningful WAF signal is the
+        cookie set, so clearing cookies and restoring the aws-waf-token
+        preserves the rotation's intent. localStorage is not wiped — acceptable
+        for this target, where the WAF token lives in a cookie.
+        """
+        if self._context is None:
+            # First call (from __init__): create the one and only window.
+            # no_viewport=True lets the page fill the maximized window instead
+            # of Playwright's default fixed 1280x720 viewport.
+            self._context = self._browser.new_context(user_agent=CHROME_120_UA, no_viewport=True)
+            self._page = self._context.new_page()
+        else:
+            # Subsequent rotations: fresh cookie jar, same window.
+            self._context.clear_cookies()
 
         # Restore WAF token so CAPTCHA doesn't re-trigger
         if self._waf_token:
