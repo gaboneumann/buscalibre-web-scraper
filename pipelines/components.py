@@ -362,7 +362,6 @@ class WebCrawler:
                     self.client.get(build_page(self.config.category_url, page_index), request_type="category")
                     self.delay_policy.wait_post_rotation()
 
-                logger.info("[%s] Extracting: %s", success_count + 1, full_link)
                 html_prod = self.client.get(full_link, request_type="product")
 
                 if html_prod is None:
