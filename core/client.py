@@ -1,29 +1,29 @@
 """
 HTTP Client with Playwright-based browser automation.
-Uses a real Chromium browser to solve AWS WAF JS challenges automatically.
+Uses real Google Chrome stable (channel="chrome") to solve AWS WAF JS challenges.
 Browser instance persists across session rotations — CAPTCHA only solved once.
 """
 
 import logging
+import os
 import time
 import random
+from datetime import datetime
 from typing import Tuple, Optional
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 from config.settings import (
     DOMAIN_URL, CATEGORY_URL, REQUEST_TIMEOUT,
     DELAY_MIN, DELAY_MAX, DELAY_RECOVERY_MIN, DELAY_RECOVERY_MAX,
-    CAPTCHA_SOLVE_TIMEOUT_MS
+    CAPTCHA_SOLVE_TIMEOUT_MS, CAPTCHA_SLICE_TIMEOUT_MS
 )
-from config.headers import CHROME_120_UA
 from urllib.parse import urljoin
 from core.windows_manager import WindowsManager
 
 logger = logging.getLogger(__name__)
 
-# Stable WM_CLASS for the browser window. The GNOME "Auto Move Windows"
-# extension matches this exact string (via a .desktop StartupWMClass) to pin
-# the window to a fixed workspace. Keep in sync with that desktop entry.
-BROWSER_WM_CLASS = "BuscaLibreScraper"
+
+class CaptchaBudgetExhausted(Exception):
+    """Raised when the CAPTCHA solve budget is exhausted without a solved challenge."""
 
 
 class HTTPClient:
@@ -73,21 +73,20 @@ class HTTPClient:
             # --start-maximized fills that monitor; verified to coexist with
             # --window-position under XWayland (--ozone-platform=x11).
             #
-            # --class=BuscaLibreScraper gives the window a stable WM_CLASS
-            # (Playwright's default embeds a random profile path). The window is
-            # created ONCE and lives on whatever workspace the scraper is
-            # launched from; it is never sticky and never recreated, so it stays
-            # put without disturbing other workspaces. No window manager rule is
-            # required for this to work.
-            launch_args = ["--ozone-platform=x11", f"--class={BROWSER_WM_CLASS}"]
+            # The window is created ONCE and lives on whatever workspace the
+            # scraper is launched from; it is never sticky and never recreated,
+            # so it stays put without disturbing other workspaces.
+            launch_args = [
+                "--ozone-platform=x11",
+                "--disable-blink-features=AutomationControlled",
+            ]
             secondary = self._wm.detect_secondary_monitor()
             if secondary and len(secondary) == 4:
                 x, y, _, _ = secondary
                 launch_args.append(f"--window-position={x},{y}")
                 launch_args.append("--start-maximized")
-                logger.info("Opening browser maximized on secondary monitor at x=%d, y=%d", x, y)
 
-            self._browser = self._playwright.chromium.launch(headless=False, args=launch_args)
+            self._browser = self._playwright.chromium.launch(channel="chrome", headless=False, args=launch_args)
             self.reset_session()
 
     def _get_adaptive_delay(self) -> Tuple[float, float]:
@@ -119,18 +118,18 @@ class HTTPClient:
         disrupting unrelated work. So the window is created ONCE and never
         recreated; rotation just drops the cookie jar in place.
 
-        Anti-detection note: the original rotation created a fresh context
-        (new cookies + storage) but the browser fingerprint never changed
-        (fixed Chrome 120 UA, same process). The meaningful WAF signal is the
-        cookie set, so clearing cookies and restoring the aws-waf-token
-        preserves the rotation's intent. localStorage is not wiped — acceptable
+        Anti-detection note: the browser process (real Google Chrome via
+        channel="chrome") stays alive across rotations — only the cookie jar
+        is dropped. The native Chrome UA and fingerprint remain consistent
+        throughout the run. The WAF token is preserved via re-injection so
+        CAPTCHA is only solved once. localStorage is not wiped — acceptable
         for this target, where the WAF token lives in a cookie.
         """
         if self._context is None:
             # First call (from __init__): create the one and only window.
             # no_viewport=True lets the page fill the maximized window instead
             # of Playwright's default fixed 1280x720 viewport.
-            self._context = self._browser.new_context(user_agent=CHROME_120_UA, no_viewport=True)
+            self._context = self._browser.new_context(no_viewport=True)
             self._page = self._context.new_page()
         else:
             # Subsequent rotations: fresh cookie jar, same window.
@@ -154,11 +153,51 @@ class HTTPClient:
             if "Human Verification" in self._page.title():
                 logger.warning("CAPTCHA detected — please solve it in the browser window...")
                 self._wm.notify_captcha()
-                logger.info("Waiting for CAPTCHA solution (timeout: %dms = %.1f min)...", CAPTCHA_SOLVE_TIMEOUT_MS, CAPTCHA_SOLVE_TIMEOUT_MS / 60000)
-                self._page.wait_for_function(
-                    "document.title !== 'Human Verification'",
-                    timeout=CAPTCHA_SOLVE_TIMEOUT_MS
+                logger.info(
+                    "Waiting for CAPTCHA solution (budget: %dms = %.1f min, slice: %dms)...",
+                    CAPTCHA_SOLVE_TIMEOUT_MS, CAPTCHA_SOLVE_TIMEOUT_MS / 60000,
+                    CAPTCHA_SLICE_TIMEOUT_MS,
                 )
+
+                deadline = time.monotonic() + CAPTCHA_SOLVE_TIMEOUT_MS / 1000
+                solved = False
+                while time.monotonic() < deadline:
+                    try:
+                        self._page.wait_for_function(
+                            "document.title !== 'Human Verification'",
+                            timeout=CAPTCHA_SLICE_TIMEOUT_MS,
+                        )
+                        solved = True
+                        break
+                    except PlaywrightTimeoutError:
+                        if "Human Verification" in self._page.title():
+                            logger.warning(
+                                "CAPTCHA widget expired — reloading page to serve a fresh challenge..."
+                            )
+                            try:
+                                self._page.reload(
+                                    wait_until="domcontentloaded", timeout=self.timeout
+                                )
+                            except Exception:
+                                self._page.goto(
+                                    self._category_url,
+                                    wait_until="domcontentloaded",
+                                    timeout=self.timeout,
+                                )
+                        else:
+                            # Title changed during the except path — already solved.
+                            solved = True
+                            break
+
+                if not solved:
+                    logger.error(
+                        "CAPTCHA budget exhausted (%dms). Cannot resume — stopping.",
+                        CAPTCHA_SOLVE_TIMEOUT_MS,
+                    )
+                    raise CaptchaBudgetExhausted(
+                        f"CAPTCHA budget exhausted after {CAPTCHA_SOLVE_TIMEOUT_MS}ms"
+                    )
+
                 logger.info("CAPTCHA solved!")
 
             # Cache WAF token for next rotation
@@ -168,6 +207,8 @@ class HTTPClient:
                 self._waf_token = waf
 
             logger.debug("Session initialized.")
+        except CaptchaBudgetExhausted:
+            raise
         except Exception as e:
             logger.warning("Could not initialize session: %s", e)
 
@@ -222,6 +263,7 @@ class HTTPClient:
                         response = self._page.goto(url, wait_until="domcontentloaded", timeout=self.timeout)
                     else:
                         logger.error("WAF BLOCKED (%s) on %s after %s retries. Giving up.", response.status, url, max_retries)
+                        self._dump_waf_evidence(response, url)  # TEMP diagnostic — real-vs-false-positive
                         self._in_recovery = True  # Mark for recovery mode
                         return None
                 else:
@@ -246,6 +288,44 @@ class HTTPClient:
             logger.error("Connection error: %s", e)
             self._in_recovery = True  # Mark for recovery mode
             return None
+
+    def _dump_waf_evidence(self, response, url: str) -> None:
+        """TEMP diagnostic: persist real WAF block evidence to disk.
+
+        Distinguishes a genuine AWS WAF challenge from a false positive by
+        recording the response status, the WAF-specific headers, and the page
+        title/snippet, plus a screenshot. Best-effort: never raises into the
+        scraping flow. Writes to storage/outputs/ so it never pollutes the
+        client-facing console output. Remove once the question is settled.
+        """
+        try:
+            os.makedirs("storage/outputs", exist_ok=True)
+            ts = datetime.now().isoformat(timespec="seconds")
+            headers = {}
+            try:
+                headers = response.headers if response else {}
+            except Exception:
+                pass
+            keys = ("x-amzn-waf-action", "server", "x-cache", "via",
+                    "x-amzn-trace-id", "content-type", "content-length")
+            picked = {k: headers.get(k) for k in keys}
+            title, snippet = "", ""
+            try:
+                title = self._page.title()
+                snippet = self._page.content()[:600].replace("\n", " ")
+            except Exception:
+                pass
+            with open("storage/outputs/waf_debug.log", "a", encoding="utf-8") as f:
+                f.write(f"[{ts}] status={getattr(response, 'status', '?')} url={url}\n")
+                f.write(f"  headers={picked}\n")
+                f.write(f"  title={title!r}\n")
+                f.write(f"  snippet={snippet!r}\n\n")
+            try:
+                self._page.screenshot(path=f"storage/outputs/waf_block_{ts.replace(':', '-')}.png")
+            except Exception:
+                pass
+        except Exception as e:
+            logger.debug("WAF evidence dump failed: %s", e)
 
     def close(self) -> None:
         """Release all Playwright resources (context, browser, playwright).
@@ -276,7 +356,10 @@ class HTTPClient:
         try:
             logger.debug("[Cascade] Already at home")
             logger.debug("[Cascade] Navigating to category: %s", category_url)
-            time.sleep(random.uniform(3, 6))
+            # Human-like home→category pause for the real browser path only.
+            # Strategies that need no browser (e.g. NoOpStrategy in tests) skip it.
+            if self._strategy is None or self._strategy.requires_browser:
+                time.sleep(random.uniform(3, 6))
             return self.get(category_url, request_type="category")
         except Exception as e:
             logger.error("Cascade navigation error: %s", e)

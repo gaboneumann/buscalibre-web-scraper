@@ -12,7 +12,7 @@
 #   pipeline = CategoryPipeline(client=client, config=config)
 
 DOMAIN_URL = "https://www.buscalibre.cl/"
-CATEGORY_URL = "https://www.buscalibre.cl/libros/ciencias-economicas"
+CATEGORY_URL = "https://www.buscalibre.cl/libros/computacion"
 
 # HTTP request settings
 REQUEST_TIMEOUT = 20
@@ -22,9 +22,15 @@ REQUEST_TIMEOUT = 20
 # Default: 600000ms = 10 minutes
 CAPTCHA_SOLVE_TIMEOUT_MS = 600000
 
+# Per-slice CAPTCHA polling timeout (in milliseconds)
+# Must stay below the AWS WAF widget TTL (~60-120s). On expiry, the page is
+# reloaded to serve a fresh widget. Tunable without touching logic.
+# Default: 90000ms = 90 seconds
+CAPTCHA_SLICE_TIMEOUT_MS = 90000
+
 # Rate limiting delays (in seconds) - ANTI-DETECTION: DO NOT REDUCE
-# - Normal inter-request delay: 4-8 seconds (happy path)
-# - Recovery delay after error (202/405): 15-25 seconds (post-error backoff)
+# - Normal inter-request delay: 2-6 seconds (happy path)
+# - Recovery delay after error (202/405): 10-20 seconds (post-error backoff)
 # - Coffee breaks every 10-15 products (150-250 seconds)
 # These delays are essential to avoid rate-limiting and detection.
 DELAY_MIN = 2.0
