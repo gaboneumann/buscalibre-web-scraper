@@ -1,15 +1,12 @@
 """
 WindowsManager: subprocess-based desktop helpers.
 
-Window-to-workspace placement is NOT handled here. It is delegated to the GNOME
-"Auto Move Windows" shell extension, which matches the browser by its stable
-WM_CLASS (set via the ``--class`` launch flag in core.client) and places the
-window on the configured workspace AT CREATION TIME — before it is presented.
-This is the only mechanism that can pin a window without the appear-then-move
-flicker that any external (xdotool) move suffers from.
+Window-to-workspace placement is NOT handled here. The browser window is created
+once and never recreated, so it simply stays on the workspace the scraper was
+launched from — no window manager rules or post-creation moves are needed.
 
-This class now only owns best-effort desktop integrations that the scraper
-still needs: secondary-monitor detection and the CAPTCHA notification.
+This class only owns best-effort desktop integrations that the scraper still
+needs: secondary-monitor detection and the CAPTCHA notification.
 """
 
 import logging
