@@ -28,7 +28,7 @@ The scraper runs a two-level nested pipeline:
 │  │  For each product on the page:                      │    │
 │  │  ┌─────────────────────────────────────────────┐   │    │
 │  │  │ • Verify deduplication (CSV checkpoint)     │   │    │
-│  │  │ • LAYER 3: Context rotation (2–4 books)     │   │    │
+│  │  │ • LAYER 3: Context rotation (10–15 books)   │   │    │
 │  │  │ • LAYER 6: Cascade nav (home→cat→prod)      │   │    │
 │  │  │ • GET /libro-{id} via Playwright browser    │   │    │
 │  │  │ • LAYER 4a: Jitter 2–5s before request      │   │    │
@@ -36,7 +36,7 @@ The scraper runs a two-level nested pipeline:
 │  │  │ • Parse data (title, author, price, stock)  │   │    │
 │  │  │ • STREAMING write: save_single_record()     │   │    │
 │  │  │   (line-by-line to CSV immediately)         │   │    │
-│  │  │ • Delay: 4–8s × multiplier (Layer 8)         │   │    │
+│  │  │ • Delay: 2–6s × multiplier (Layer 8)         │   │    │
 │  │  │ • LAYER 4d: Coffee break every 10–15 books  │   │    │
 │  │  │             (150–250s human-like pause)      │   │    │
 │  │  │ • 202 handling: 45–70s + context reset      │   │    │
@@ -64,7 +64,7 @@ main.py (Orchestrator)
    - Playwright: GET page
    - Parse data
    - Save to CSV (append)
-   - Delay 4–8s × multiplier (Layer 8) + jitter
+   - Delay 2–6s × multiplier (Layer 8) + jitter
    - Coffee break each 10–15 books
         │
    storage/outputs/books_arte.csv
@@ -79,14 +79,17 @@ main.py (Orchestrator)
 ```python
 # core/client.py
 self._playwright = sync_playwright().start()
-self._browser = self._playwright.chromium.launch(headless=False)
-self._context = self._browser.new_context(user_agent=CHROME_120_UA)
+self._browser = self._playwright.chromium.launch(
+    channel="chrome", headless=False,
+    args=["--ozone-platform=x11", "--disable-blink-features=AutomationControlled", ...]
+)
+self._context = self._browser.new_context(no_viewport=True)  # native Chrome UA; no override
 self._page = self._context.new_page()
 ```
 
-- **Mechanism:** Real Chromium instance — genuine TLS, JS execution, cookies, fingerprint.
+- **Mechanism:** Real Google Chrome stable binary (via `channel="chrome"`) — genuine TLS, JS execution, cookies, fingerprint, and consistent `userAgentData.brands`. `navigator.webdriver` is suppressed by `--disable-blink-features=AutomationControlled`.
 - **Why curl_cffi failed:** AWS WAF's `aws-waf-token` is cryptographically bound to the browser that generated it. Injecting it into a different HTTP client results in 405.
-- **Result:** CAPTCHA solved once, token reused across all subsequent requests.
+- **Result:** the consistent fingerprint keeps the WAF from serving a CAPTCHA on normal runs; if one does appear, it is solved once and the token is reused across all subsequent requests.
 
 ---
 
@@ -108,21 +111,18 @@ Playwright handles `sec-fetch-*` headers automatically. Only `Referer` is overri
 ```python
 # core/client.py
 def _rotate_context(self):
-    if self._context:
-        self._context.close()
-    self._context = self._browser.new_context(user_agent=CHROME_120_UA)
-    self._page = self._context.new_page()
+    if self._context is None:
+        # First call: create the one and only window.
+        self._context = self._browser.new_context(no_viewport=True)  # native Chrome UA
+        self._page = self._context.new_page()
+    else:
+        # Subsequent rotations: fresh cookie jar, same window.
+        self._context.clear_cookies()
     if self._waf_token:
         self._context.add_cookies([self._waf_token])  # Restore token
-
-# category_pipeline.py
-if books_in_session >= reset_threshold:
-    client.reset_session()
-    books_in_session = 0
-    reset_threshold = random.randint(2, 4)
 ```
 
-**Key insight:** The browser process stays alive — only the context (cookies, storage, history) rotates. The WAF token is cached in `self._waf_token` and restored so CAPTCHA is only solved **once** per run. Rotation interval is random (2–4 products).
+**Key insight:** The browser process stays alive — only the cookie jar is cleared on rotation (no new OS window). The WAF token is cached in `self._waf_token` and restored so a CAPTCHA, if it appears at all, is only solved **once** per run. Because `channel="chrome"` is used (real Google Chrome), every context naturally carries the native Chrome UA — no override is needed or applied.
 
 ---
 
@@ -134,7 +134,7 @@ Six randomness points, each independent:
 |---|---|---|
 | 4a: Warm-up jitter | `_initialize_session()` | 2–4s before navigating home |
 | 4b: Pre-request jitter | `client.get()` | 2–5s before each `page.goto()` |
-| 4c: Main delay | `category_pipeline.py` | 4–8s between products × Layer 8 multiplier (1.0–3.0) |
+| 4c: Main delay | `category_pipeline.py` | 2–6s between products × Layer 8 multiplier (1.0–3.0) |
 | 4d: Coffee break | `category_pipeline.py` | 150–250s every 10–15 books |
 | 4e: Post-block recovery | `category_pipeline.py` | 45–70s after 202 |
 | 4f: Page pause | `category_pipeline.py` | 60–90s between category pages |
@@ -143,17 +143,18 @@ Result: temporal pattern impossible to model.
 
 ---
 
-### Layer 5: User-Agent Consistent with Browser
+### Layer 5: Consistent Browser Fingerprint via Real Chrome
 
 ```python
-# config/headers.py
-CHROME_120_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-
 # core/client.py
-self._context = self._browser.new_context(user_agent=CHROME_120_UA)
+self._browser = self._playwright.chromium.launch(
+    channel="chrome", headless=False,
+    args=[..., "--disable-blink-features=AutomationControlled"]
+)
+self._context = self._browser.new_context(no_viewport=True)  # no UA override
 ```
 
-UA is set at context creation and matches the Chromium version — no TLS/UA/fingerprint inconsistencies.
+The browser binary is Google Chrome stable (`channel="chrome"`). No `user_agent=` override is set on the context — the UA string, `userAgentData.brands`, client-hints version, and TLS fingerprint are all natively consistent. `--disable-blink-features=AutomationControlled` ensures `navigator.webdriver === false` on every page.
 
 ---
 
@@ -213,9 +214,9 @@ After every category-page batch, the crawlercomputes a `block_rate` and adjusts 
 The multiplier scales only Layer 4c (`wait_between_products`). All other waits (4a, 4b, 4d, 4e, 4f) are untouched — no double-counting.
 
 **Timing at peak (sustained high block rate, multiplier capped at 3.0):**
-- Layer 4c: `uniform(4, 8) × 3.0` = **12–24 seconds** per product (base)
+- Layer 4c: `uniform(2, 6) × 3.0` = **6–18 seconds** per product (base)
 - Layer 4e: exponential backoff up to **180 seconds** on a single blocked request
-- Worst-case combined: **~204 seconds per product** — this is intentional, not a bug
+- Worst-case combined: **~198 seconds per product** — this is intentional, not a bug
 
 **Implementation:** `DelayPolicy` carries `_multiplier` as observable state. The `multiplier` property is publicly readable, enabling state-based assertions in tests without time mocking.
 
@@ -227,8 +228,7 @@ The multiplier scales only Layer 4c (`wait_between_products`). All other waits (
 buscalibre-web-scraper/
 │
 ├── config/
-│   ├── settings.py                    # Constants (URLs, timeouts, limits)
-│   └── headers.py                     # Chrome 120 User-Agent constant
+│   └── settings.py                    # Constants (URLs, timeouts, limits)
 │
 ├── core/
 │   ├── client.py                      # Playwright browser client (headed)
@@ -275,8 +275,8 @@ CATEGORY_URL = 'https://www.buscalibre.cl/libros/arte'
 PRODUCT_TARGET = 100          # Books to extract
 REQUEST_TIMEOUT = 20          # Playwright uses timeout * 3000ms internally
 
-DELAY_MIN = 4.0               # Minimum delay between products (seconds, base — Layer 8 scales up)
-DELAY_MAX = 8.0               # Maximum delay between products (seconds, base — Layer 8 scales up)
+DELAY_MIN = 2.0               # Minimum delay between products (seconds, base — Layer 8 scales up)
+DELAY_MAX = 6.0               # Maximum delay between products (seconds, base — Layer 8 scales up)
 
 OUTPUT_PATH = "storage/outputs/books_arte.csv"
 ```
@@ -315,16 +315,16 @@ source .venv/bin/activate        # macOS / Linux
 # .venv\Scripts\activate         # Windows
 
 pip install -r requirements.txt
-python -m playwright install chromium
-sudo python -m playwright install-deps chromium   # Linux only
 
 pytest tests/ -v
 python main.py
 ```
 
+> **Hard runtime dependency:** Google Chrome stable (version 149+) must be installed on the host **before** running `python main.py`. The scraper uses `channel="chrome"` — it launches the real Chrome binary, NOT Playwright's bundled Chromium. If Chrome is absent, startup fails immediately with a "channel chrome not found" error. Install from [google.com/chrome](https://www.google.com/chrome/).
+
 > **WSL users:** Playwright runs headed (visible browser). WSLg or an X11 server is required.
 
-When the browser opens, solve the CAPTCHA manually if prompted. The scraper detects resolution and continues automatically.
+A CAPTCHA rarely appears now that the fingerprint is consistent. If AWS does prompt one, solve it manually in the browser — the scraper detects resolution and continues automatically.
 
 ---
 

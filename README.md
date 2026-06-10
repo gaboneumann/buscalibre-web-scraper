@@ -4,10 +4,10 @@
 
 ![Python](https://img.shields.io/badge/Python-3.9+-3776AB?logo=python&logoColor=white)
 ![Playwright](https://img.shields.io/badge/Playwright-Real%20Browser-45ba4b?logo=playwright&logoColor=white)
-![AWS WAF](https://img.shields.io/badge/AWS%20WAF-CAPTCHA%20Bypass-FFA500)
+![AWS WAF](https://img.shields.io/badge/AWS%20WAF-Fingerprint%20Evasion-FFA500)
 ![ETL Pipeline](https://img.shields.io/badge/ETL-Two--Level%20Web--Crawler-blueviolet)
 ![Anti-Detection](https://img.shields.io/badge/Anti--Detection-8%20Layers-brightgreen)
-![Tests](https://img.shields.io/badge/Tests-178%20pytest-brightgreen?logo=pytest&logoColor=white)
+![Tests](https://img.shields.io/badge/Tests-166%20pytest-brightgreen?logo=pytest&logoColor=white)
 
 ---
 
@@ -15,7 +15,7 @@
 
 BuscaLibre uses **AWS WAF** with two challenge types: `challenge.js` (auto-resolved JS) and `captcha.js` (visible CAPTCHA). The WAF token is cryptographically bound to the browser that solved it, so you can't extract and reuse it in a plain HTTP client.
 
-**Solution:** Playwright launches a real Chromium browser. CAPTCHA is solved once manually. The `aws-waf-token` cookie is cached and restored across browser context rotations, so no re-solving is needed.
+**Solution:** Playwright launches real Google Chrome stable (`channel="chrome"`) with a fully consistent fingerprint — `navigator.webdriver` suppressed, native UA, and matching `userAgentData.brands` — which keeps the WAF from triggering its CAPTCHA on normal runs. If AWS still escalates to a visible challenge, it is solved once manually; the `aws-waf-token` cookie is then cached and restored across context rotations, so no re-solving is needed.
 
 ---
 
@@ -43,10 +43,10 @@ BuscaLibre uses **AWS WAF** with two challenge types: `challenge.js` (auto-resol
 |---|---|---|---|
 | HTTP client | curl_cffi generic | `impersonate="chrome120"` | **Real Playwright browser** |
 | WAF | Cloudflare (assumed) | Cloudflare (assumed) | **AWS WAF (confirmed)** |
-| CAPTCHA | Not handled | Not handled | **Solved once, token cached** |
+| CAPTCHA | Not handled | Not handled | **Avoided via consistent fingerprint; manual solve as fallback** |
 | Sec-Fetch headers | Static `"none"` | Dynamic by context | **Automatic (real browser)** |
 | Context rotation | Every 50–100 (fixed) | Every 2–4 (random) | **Policy-based (10–15 products)** |
-| Delays | 10–20s | 30–55s + jitter | **4–8s + coffee breaks (150–250s)** |
+| Delays | 10–20s | 30–55s + jitter | **2–6s + coffee breaks (150–250s)** |
 | Block handling | Fixed retry | Fixed wait | **Exponential backoff (45s → 90s → 180s)** |
 | 202 rate | 70% | 0% | **0%** |
 
@@ -54,10 +54,9 @@ BuscaLibre uses **AWS WAF** with two challenge types: `challenge.js` (auto-resol
 
 ## Stack
 
-- **Playwright**: headed Chromium for WAF bypass
+- **Playwright + Google Chrome stable (149+)**: headed real Chrome binary for WAF bypass (`channel="chrome"`; bundled Chromium is NOT used)
 - **BeautifulSoup4 + lxml**: HTML parsing (decoupled from HTTP client, fully testable)
 - **pytest**: unit tests with HTML fixtures
-- **curl-cffi**: HTTP impersonation fallback (reserved for future use)
 
 ---
 
@@ -68,7 +67,6 @@ buscalibre-web-scraper/
 ├── main.py                          # Entry point (CLI + config handling)
 ├── config/
 │   ├── settings.py                  # Default configuration constants
-│   ├── headers.py                   # Dynamic request headers (request-type aware)
 │   └── logging_config.py            # Logging setup (levels, formatting)
 ├── core/
 │   ├── client.py                    # HTTPClient (Playwright, session rotation, strategy injection)
@@ -113,13 +111,14 @@ cd buscalibre-web-scraper
 
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-python -m playwright install chromium
-# Linux only:
-sudo python -m playwright install-deps chromium
 
 pytest tests/ -m "not network" -v   # verify
-python main.py                       # run (solve the CAPTCHA when the browser opens)
+python main.py                       # run (rarely prompts a CAPTCHA; solve it in the browser if AWS escalates)
 ```
+
+> **Hard runtime dependency: Google Chrome stable (version 149+) must be installed on the host.**
+> The scraper uses `channel="chrome"` — it launches the real Google Chrome binary, NOT Playwright's bundled Chromium.
+> If Google Chrome is absent, startup fails immediately with a clear error. Install from [google.com/chrome](https://www.google.com/chrome/) before running.
 
 **Output:** CSV file with auto-generated name based on category (e.g., `storage/outputs/books_arte.csv`).
 
@@ -135,8 +134,8 @@ python main.py                       # run (solve the CAPTCHA when the browser o
 DOMAIN_URL = "https://www.buscalibre.cl/"
 CATEGORY_URL = "https://www.buscalibre.cl/libros/arte"
 PRODUCT_TARGET = 100
-DELAY_MIN = 4.0
-DELAY_MAX = 8.0
+DELAY_MIN = 2.0
+DELAY_MAX = 6.0
 OUTPUT_PATH = "storage/outputs/books.csv"
 ```
 
@@ -155,8 +154,8 @@ python main.py --config config.json --target 150     # Combine both
   "domain_url": "https://www.buscalibre.cl/",
   "category_url": "https://www.buscalibre.cl/libros/arte",
   "product_target": 100,
-  "delay_min": 4.0,
-  "delay_max": 8.0,
+  "delay_min": 2.0,
+  "delay_max": 6.0,
   "output_path": "storage/outputs/books.csv"
 }
 ```
@@ -186,7 +185,7 @@ The scraper implements a **two-level nested iteration** with intelligent batch-a
 │  │  │                                                             │
 │  │  ├─ LEVEL 2 - Transform: parse_product(html) → Dict           │
 │  │  ├─ LEVEL 3 - Load: save_record() + checkpoint_mgr            │
-│  │  ├─ wait_between_products() [4–8s + multiplier×]              │
+│  │  ├─ wait_between_products() [2–6s + multiplier×]              │
 │  │  ├─ Check: should_take_coffee_break()? → wait 150–250s        │
 │  │  └─ Check: product_target reached? → STOP                     │
 │  │                                                                │
@@ -213,7 +212,7 @@ The scraper implements a **two-level nested iteration** with intelligent batch-a
 - **Policies** (pluggable, reusable):
   - **SessionRotationPolicy**: Tracks products per session; on threshold (10–15), rotates and waits 10–15s
   - **BlockDetectionPolicy**: Tracks consecutive 202s; exponential backoff (45s → 90s → 180s); auto-abort after 3 consecutive
-  - **DelayPolicy**: Inter-request delays (4–8s), coffee breaks (150–250s every 10–15 products), multiplier-aware
+  - **DelayPolicy**: Inter-request delays (2–6s), coffee breaks (150–250s every 10–15 products), multiplier-aware
 - **Download Strategies**: Pluggable HTTP handlers (`AntiDetectionStrategy` with real browser; `NoOpStrategy` with instant fixtures)
 - **CheckpointManager**: Reads existing CSV → extracts scraped URLs → prevents duplicate processing on resume
 - **CSVSchema**: Validates parsed product data before writing
@@ -226,11 +225,11 @@ The scraper implements a **two-level nested iteration** with intelligent batch-a
 
 | # | Layer | Purpose |
 |---|---|---|
-| 1 | **Real Browser Execution** | Playwright Chromium for genuine TLS, JS execution, and fingerprint |
+| 1 | **Real Browser Execution** | Real Google Chrome stable (`channel="chrome"`) for genuine TLS, JS execution, and fingerprint |
 | 2 | **Referer Randomization** | Simulate organic discovery from search engines and category pages |
-| 3 | **Context Rotation + Token Persistence** | Rotate cookies/storage every 2–4 products; WAF token reused across rotations |
+| 3 | **Context Rotation + Token Persistence** | Rotate cookies/storage every 10–15 products; WAF token reused across rotations |
 | 4 | **Multi-level Human Rate Limiting** | 6 independent timing jitters (warm-up, pre-request, main, coffee, recovery, page) |
-| 5 | **Consistent User-Agent** | Chrome 120 UA matches Chromium binary (no TLS/UA mismatch) |
+| 5 | **Consistent Browser Fingerprint** | Native Chrome UA + `--disable-blink-features=AutomationControlled`; UA string, `userAgentData.brands`, and TLS all consistent |
 | 6 | **Cascade Navigation** | Home → Category → Product (avoids bot-pattern direct hits) |
 | 7 | **Shuffling + Checkpoint** | Random link order + CSV deduplication on resume |
 | 8 | **Adaptive Delay Backoff** | Per-batch block rate drives multiplier (1.0–3.0×) on the inter-request delay |
@@ -250,7 +249,7 @@ The scraper implements a **two-level nested iteration** with intelligent batch-a
 - **Purpose:** Respect rate limits and gracefully abort when blocked
 
 #### Delay Policy
-- **Inter-request:** 4–8 seconds (randomized)
+- **Inter-request:** 2–6 seconds (randomized)
 - **Coffee breaks:** Every 10–15 products, sleep 150–250 seconds (2.5–4.2 min)
 - **Purpose:** Human-like behavior, avoid pattern detection
 
@@ -258,7 +257,7 @@ The scraper implements a **two-level nested iteration** with intelligent batch-a
 - On block_rate > 20%: **Escalate multiplier × 1.5**, capped at 3.0×
 - On block_rate == 0%: **Decay multiplier × 0.9**, floored at 1.0×
 - On 0% < block_rate ≤ 20%: **Hold** (avoid oscillation)
-- Base delay 4–8s; at 3.0× peak: 12–24s per product
+- Base delay 2–6s; at 3.0× peak: 6–18s per product
 - Purpose: Automatically back off under pressure, recover during clean runs
 
 ---
@@ -328,17 +327,17 @@ pytest tests/parsers/test_price_parser.py -v
 pytest tests/ --cov=. --cov-report=term-missing
 ```
 
-Unit tests with HTML fixtures validate parser behavior deterministically. `core/client.py` requires a live Playwright browser and is covered by integration tests.
+Unit tests with HTML fixtures validate parser behavior deterministically. `core/client.py` requires a live Playwright browser and is covered by integration tests. The full non-network suite (**166 tests**) runs in **under 1 second** — a `tests/conftest.py` fixture neutralizes the production anti-detection sleeps so they never slow the suite.
 
 ---
 
 ## Design Principles
 
 - **Streaming writes over batch**: each product appended to CSV immediately. On crash, resume from checkpoint.
-- **Anti-detection is baked in**: User-Agent fixed to Chrome 120 (matches TLS fingerprint), dynamic headers per request type, intentionally long delays.
+- **Anti-detection is baked in**: Real Google Chrome binary (`channel="chrome"`) provides a natively consistent UA, `userAgentData.brands`, and TLS fingerprint. Playwright-native headers (only `Referer` is overridden per request type), intentionally long delays.
 - **Pluggable architecture**: strategies for HTTP, policies for behavior, configs for flexibility.
 - **Testability**: decoupled parsers (BeautifulSoup only), fixture-based unit tests, no browser required for tests.
-- **No random User-Agent**: randomization breaks TLS fingerprint matching and will be detected.
+- **No UA override**: the context inherits Chrome's native UA — overriding it would create UA/brands/TLS inconsistencies that WAFs detect.
 
 ---
 
@@ -347,6 +346,8 @@ Unit tests with HTML fixtures validate parser behavior deterministically. `core/
 Comprehensive docs organized in [`docs/`](docs/):
 
 - **[docs/TECHNICAL.md](docs/TECHNICAL.md)**: full architecture, 8 anti-detection layers, data flow
+- **[docs/MIGRATION.md](docs/MIGRATION.md)**: ETL architecture refactor and upgrade guide
+- **[docs/feature_update.md](docs/feature_update.md)**: multi-run deduplication notes
 
 ---
 
