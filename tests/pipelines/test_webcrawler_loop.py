@@ -226,29 +226,3 @@ def test_clean_batch_decays_multiplier():
 
     # 0 blocks / 3 successes → block_rate=0.0 → decay: 2.0 * 0.9 = 1.8
     assert delay_policy.multiplier == pytest.approx(1.8)
-
-
-def test_batch_summary_emitted_per_page(caplog):
-    """BATCH SUMMARY is logged once per populated page, not gated on product_target."""
-    import logging
-
-    config = _make_config(product_target=100)
-
-    page_call_count = [0]
-
-    def extract_fn(html):
-        page_call_count[0] += 1
-        if page_call_count[0] <= 3:
-            n = page_call_count[0]
-            return [f"/product/p{n}-a", f"/product/p{n}-b", f"/product/p{n}-c"]
-        return []
-
-    crawler = _make_crawler(config, extract_fn=extract_fn)
-
-    with caplog.at_level(logging.INFO):
-        crawler.run()
-
-    batch_summary_count = sum(
-        1 for record in caplog.records if "BATCH SUMMARY" in record.message
-    )
-    assert batch_summary_count == 3

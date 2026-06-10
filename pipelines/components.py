@@ -164,8 +164,8 @@ class DelayPolicy:
             scale_down: Factor to decrease multiplier on clean batches (default 0.9).
             block_rate_threshold: Block rate above which multiplier escalates (default 0.2).
         """
-        self._delay_min = delay_min or getattr(settings, 'DELAY_MIN', 30)
-        self._delay_max = delay_max or getattr(settings, 'DELAY_MAX', 55)
+        self._delay_min = delay_min if delay_min is not None else getattr(settings, 'DELAY_MIN', 30)
+        self._delay_max = delay_max if delay_max is not None else getattr(settings, 'DELAY_MAX', 55)
         self._coffee_break_interval = coffee_break_interval or random.randint(10, 15)
         self._coffee_break_min = coffee_break_min
         self._coffee_break_max = coffee_break_max
@@ -317,7 +317,7 @@ class WebCrawler:
         page_index = 1
 
         while True:
-            logger.info("BATCH: Category Page %s", page_index)
+            logger.info("Scanning category page %s", page_index)
             self.client.reset_session()
 
             page_url = build_page(self.config.category_url, page_index)
@@ -406,8 +406,6 @@ class WebCrawler:
                 if self.delay_policy.should_take_coffee_break(success_count):
                     self.delay_policy.wait_coffee_break()
 
-            logger.info("BATCH SUMMARY: %s success, %s blocks", successful_in_batch, blocks_in_batch)
-
             # Layer 8: Adaptive Delay Backoff — update multiplier based on batch block rate.
             # The `total == 0` guard implements the empty-batch HOLD: a batch with no
             # blocks AND no successes (e.g. fully resumed-from-checkpoint page) must NOT
@@ -421,7 +419,6 @@ class WebCrawler:
                 new_multiplier = self.delay_policy.update_multiplier(block_rate)
 
             page_index += 1
-            logger.info("Batch complete. Waiting before next page...")
             self.delay_policy.wait_between_pages()
 
             # Reset batch counters for next iteration
