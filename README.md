@@ -15,7 +15,7 @@
 
 BuscaLibre uses **AWS WAF** with two challenge types: `challenge.js` (auto-resolved JS) and `captcha.js` (visible CAPTCHA). The WAF token is cryptographically bound to the browser that solved it, so you can't extract and reuse it in a plain HTTP client.
 
-**Solution:** Playwright launches real Google Chrome stable (`channel="chrome"`) with a fully consistent fingerprint — `navigator.webdriver` suppressed, native UA, and matching `userAgentData.brands` — which keeps the WAF from triggering its CAPTCHA on normal runs. If AWS still escalates to a visible challenge, it is solved once manually; the `aws-waf-token` cookie is then cached and restored across context rotations, so no re-solving is needed.
+**Solution:** Playwright launches real Google Chrome stable (`channel="chrome"`) with a fully consistent fingerprint - `navigator.webdriver` suppressed, native UA, and matching `userAgentData.brands` - which keeps the WAF from triggering its CAPTCHA on normal runs. If AWS still escalates to a visible challenge, it is solved once manually; the `aws-waf-token` cookie is then cached and restored across context rotations, so no re-solving is needed.
 
 ---
 
@@ -33,7 +33,7 @@ BuscaLibre uses **AWS WAF** with two challenge types: `challenge.js` (auto-resol
 
 ---
 
-**Multi-Category Capability**: The scraper is fully generic and tested across 5 distinct categories (art, technology, mathematics, sports, graphic novels). Target **any Buscalibre category** by changing `CATEGORY_URL` in config — same anti-detection robustness, zero blocks.
+**Multi-Category Capability**: The scraper is fully generic and tested across 5 distinct categories (art, technology, mathematics, sports, graphic novels). Target **any Buscalibre category** by changing `CATEGORY_URL` in config - same anti-detection robustness, zero blocks.
 
 ---
 
@@ -117,12 +117,12 @@ python main.py                       # run (rarely prompts a CAPTCHA; solve it i
 ```
 
 > **Hard runtime dependency: Google Chrome stable (version 149+) must be installed on the host.**
-> The scraper uses `channel="chrome"` — it launches the real Google Chrome binary, NOT Playwright's bundled Chromium.
+> The scraper uses `channel="chrome"` - it launches the real Google Chrome binary, NOT Playwright's bundled Chromium.
 > If Google Chrome is absent, startup fails immediately with a clear error. Install from [google.com/chrome](https://www.google.com/chrome/) before running.
 
 **Output:** CSV file with auto-generated name based on category (e.g., `storage/outputs/books_arte.csv`).
 
-**Fields:** `title, author, price, stock, page_index, product_url` — where `stock` is the available stock (integer count of units in stock, parsed from "Quedan N unidades").
+**Fields:** `title, author, price, stock, page_index, product_url` - where `stock` is the available stock (integer count of units in stock, parsed from "Quedan N unidades").
 
 ---
 
@@ -327,7 +327,7 @@ pytest tests/parsers/test_price_parser.py -v
 pytest tests/ --cov=. --cov-report=term-missing
 ```
 
-Unit tests with HTML fixtures validate parser behavior deterministically. `core/client.py` requires a live Playwright browser and is covered by integration tests. The full non-network suite (**166 tests**) runs in **under 1 second** — a `tests/conftest.py` fixture neutralizes the production anti-detection sleeps so they never slow the suite.
+Unit tests with HTML fixtures validate parser behavior deterministically. `core/client.py` requires a live Playwright browser and is covered by integration tests. The full non-network suite (**166 tests**) runs in **under 1 second** - a `tests/conftest.py` fixture neutralizes the production anti-detection sleeps so they never slow the suite.
 
 ---
 
@@ -337,7 +337,7 @@ Unit tests with HTML fixtures validate parser behavior deterministically. `core/
 - **Anti-detection is baked in**: Real Google Chrome binary (`channel="chrome"`) provides a natively consistent UA, `userAgentData.brands`, and TLS fingerprint. Playwright-native headers (only `Referer` is overridden per request type), intentionally long delays.
 - **Pluggable architecture**: strategies for HTTP, policies for behavior, configs for flexibility.
 - **Testability**: decoupled parsers (BeautifulSoup only), fixture-based unit tests, no browser required for tests.
-- **No UA override**: the context inherits Chrome's native UA — overriding it would create UA/brands/TLS inconsistencies that WAFs detect.
+- **No UA override**: the context inherits Chrome's native UA - overriding it would create UA/brands/TLS inconsistencies that WAFs detect.
 
 ---
 

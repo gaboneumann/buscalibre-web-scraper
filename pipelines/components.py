@@ -338,7 +338,7 @@ class WebCrawler:
             links = self.extract_fn(html_cat)
 
             if not links:
-                logger.info("Empty page at page %d — category exhausted.", page_index)
+                logger.info("Empty page at page %d - category exhausted.", page_index)
                 break
 
             self.block_policy.on_success()
@@ -406,7 +406,7 @@ class WebCrawler:
                 if self.delay_policy.should_take_coffee_break(success_count):
                     self.delay_policy.wait_coffee_break()
 
-            # Layer 8: Adaptive Delay Backoff — update multiplier based on batch block rate.
+            # Layer 8: Adaptive Delay Backoff - update multiplier based on batch block rate.
             # The `total == 0` guard implements the empty-batch HOLD: a batch with no
             # blocks AND no successes (e.g. fully resumed-from-checkpoint page) must NOT
             # decay the multiplier. This is why we guard here instead of dividing by

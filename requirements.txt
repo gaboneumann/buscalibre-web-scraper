@@ -5,5 +5,5 @@ pytest>=9.0.2
 
 # HARD RUNTIME DEPENDENCY (not a pip package):
 # Google Chrome stable >= 149 must be installed on the host.
-# The scraper uses channel="chrome" — Playwright's bundled Chromium is NOT used.
+# The scraper uses channel="chrome" - Playwright's bundled Chromium is NOT used.
 # Install from https://www.google.com/chrome/ before running python main.py.
