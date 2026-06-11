@@ -2,7 +2,7 @@
 
 > Python scraper that bypasses **AWS WAF** on BuscaLibre Chile using Playwright. Extracts books with **0 blocks** using a two-level web crawler, adaptive anti-detection policies, and pluggable download strategies.
 
-![Python](https://img.shields.io/badge/Python-3.9+-3776AB?logo=python&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
 ![Playwright](https://img.shields.io/badge/Playwright-Real%20Browser-45ba4b?logo=playwright&logoColor=white)
 ![AWS WAF](https://img.shields.io/badge/AWS%20WAF-Fingerprint%20Evasion-FFA500)
 ![ETL Pipeline](https://img.shields.io/badge/ETL-Two--Level%20Web--Crawler-blueviolet)
@@ -95,9 +95,7 @@ buscalibre-web-scraper/
 │   ├── test_e2e_with_noop_strategy.py      # Full E2E pipeline tests
 │   └── test_regression_orchestrator_output.py # Regression suite
 ├── docs/
-│   ├── TECHNICAL.md                 # Full architecture, 8 anti-detection layers, data flow
-│   ├── MIGRATION.md                 # Web Crawler architecture refactor phases (1-6)
-│   └── feature_update.md            # Feature changelog and updates
+│   └── TECHNICAL.md                 # Full architecture, 8 anti-detection layers, data flow
 └── requirements.txt                 # Python dependencies
 ```
 
@@ -346,8 +344,6 @@ Unit tests with HTML fixtures validate parser behavior deterministically. `core/
 Comprehensive docs organized in [`docs/`](docs/):
 
 - **[docs/TECHNICAL.md](docs/TECHNICAL.md)**: full architecture, 8 anti-detection layers, data flow
-- **[docs/MIGRATION.md](docs/MIGRATION.md)**: ETL architecture refactor and upgrade guide
-- **[docs/feature_update.md](docs/feature_update.md)**: multi-run deduplication notes
 
 ---
 
