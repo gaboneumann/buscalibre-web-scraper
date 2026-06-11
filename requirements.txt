@@ -1,9 +1,7 @@
-beautifulsoup4>=4.12.0
-lxml>=4.9.0
-playwright>=1.58.0
-pytest>=9.0.2
+# Runtime
+beautifulsoup4==4.14.3
+lxml==6.1.1
+playwright==1.60.0
 
-# HARD RUNTIME DEPENDENCY (not a pip package):
-# Google Chrome stable >= 149 must be installed on the host.
-# The scraper uses channel="chrome" — Playwright's bundled Chromium is NOT used.
-# Install from https://www.google.com/chrome/ before running python main.py.
+# Testing
+pytest==9.0.3
