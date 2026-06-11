@@ -1,7 +1,7 @@
 """
 HTTP Client with Playwright-based browser automation.
 Uses real Google Chrome stable (channel="chrome") to solve AWS WAF JS challenges.
-Browser instance persists across session rotations — CAPTCHA only solved once.
+Browser instance persists across session rotations - CAPTCHA only solved once.
 """
 
 import logging
@@ -113,16 +113,16 @@ class HTTPClient:
         """Rotate session identity WITHOUT opening a new OS window.
 
         In headed Chromium, every new BrowserContext spawns a new top-level
-        window. That window steals focus and — with a workspace-pinning rule —
+        window. That window steals focus and - with a workspace-pinning rule -
         drags the operator to the browser's workspace on every rotation,
         disrupting unrelated work. So the window is created ONCE and never
         recreated; rotation just drops the cookie jar in place.
 
         Anti-detection note: the browser process (real Google Chrome via
-        channel="chrome") stays alive across rotations — only the cookie jar
+        channel="chrome") stays alive across rotations - only the cookie jar
         is dropped. The native Chrome UA and fingerprint remain consistent
         throughout the run. The WAF token is preserved via re-injection so
-        CAPTCHA is only solved once. localStorage is not wiped — acceptable
+        CAPTCHA is only solved once. localStorage is not wiped - acceptable
         for this target, where the WAF token lives in a cookie.
         """
         if self._context is None:
@@ -151,7 +151,7 @@ class HTTPClient:
             self._page.goto(self._category_url, wait_until="domcontentloaded", timeout=self.timeout)
 
             if "Human Verification" in self._page.title():
-                logger.warning("CAPTCHA detected — please solve it in the browser window...")
+                logger.warning("CAPTCHA detected - please solve it in the browser window...")
                 self._wm.notify_captcha()
                 logger.info(
                     "Waiting for CAPTCHA solution (budget: %dms = %.1f min, slice: %dms)...",
@@ -172,7 +172,7 @@ class HTTPClient:
                     except PlaywrightTimeoutError:
                         if "Human Verification" in self._page.title():
                             logger.warning(
-                                "CAPTCHA widget expired — reloading page to serve a fresh challenge..."
+                                "CAPTCHA widget expired - reloading page to serve a fresh challenge..."
                             )
                             try:
                                 self._page.reload(
@@ -185,13 +185,13 @@ class HTTPClient:
                                     timeout=self.timeout,
                                 )
                         else:
-                            # Title changed during the except path — already solved.
+                            # Title changed during the except path - already solved.
                             solved = True
                             break
 
                 if not solved:
                     logger.error(
-                        "CAPTCHA budget exhausted (%dms). Cannot resume — stopping.",
+                        "CAPTCHA budget exhausted (%dms). Cannot resume - stopping.",
                         CAPTCHA_SOLVE_TIMEOUT_MS,
                     )
                     raise CaptchaBudgetExhausted(
@@ -232,7 +232,7 @@ class HTTPClient:
         if self._strategy:
             return self._strategy.download(url, request_type)
 
-        # Only set Referer for product pages — Playwright generates all other headers naturally
+        # Only set Referer for product pages - Playwright generates all other headers naturally
         if "/p/" in url or "libro-" in url:
             referers = [
                 f"{self._domain_url}libros/arte",
@@ -258,12 +258,12 @@ class HTTPClient:
                         wait_time = backoff_base * (2 ** (attempt - 1))
                         jitter = random.uniform(-0.2, 0.2) * wait_time
                         total_wait = wait_time + jitter
-                        logger.warning("WAF challenge attempt %s/%s on %s — waiting %.1fs", attempt, max_retries, url, total_wait)
+                        logger.warning("WAF challenge attempt %s/%s on %s - waiting %.1fs", attempt, max_retries, url, total_wait)
                         time.sleep(total_wait)
                         response = self._page.goto(url, wait_until="domcontentloaded", timeout=self.timeout)
                     else:
                         logger.error("WAF BLOCKED (%s) on %s after %s retries. Giving up.", response.status, url, max_retries)
-                        self._dump_waf_evidence(response, url)  # TEMP diagnostic — real-vs-false-positive
+                        self._dump_waf_evidence(response, url)  # TEMP diagnostic - real-vs-false-positive
                         self._in_recovery = True  # Mark for recovery mode
                         return None
                 else:

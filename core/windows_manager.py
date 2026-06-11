@@ -3,7 +3,7 @@ WindowsManager: subprocess-based desktop helpers.
 
 Window-to-workspace placement is NOT handled here. The browser window is created
 once and never recreated, so it simply stays on the workspace the scraper was
-launched from — no window manager rules or post-creation moves are needed.
+launched from - no window manager rules or post-creation moves are needed.
 
 This class only owns best-effort desktop integrations that the scraper still
 needs: secondary-monitor detection and the CAPTCHA notification.
@@ -64,7 +64,7 @@ class WindowsManager:
 
         Best-effort: the operator may be working on the other monitor while
         the browser waits on the secondary screen. Silently ignored if the
-        desktop tools are unavailable — never affects the scraper's blocking
+        desktop tools are unavailable - never affects the scraper's blocking
         wait.
         """
         try:

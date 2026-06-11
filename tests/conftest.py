@@ -8,8 +8,8 @@ def _no_real_sleep(monkeypatch):
 
     Production anti-detection pauses (``DelayPolicy`` waits, block-detection
     backoff, and ``HTTPClient._initialize_session`` home->category pauses) leak
-    into tests that mock the browser but not the clock. They are real seconds —
-    one block-backoff test alone slept ~315s — which pushed the suite to ~8 min
+    into tests that mock the browser but not the clock. They are real seconds -
+    one block-backoff test alone slept ~315s - which pushed the suite to ~8 min
     with zero added coverage.
 
     No test asserts on real elapsed wall-time; the few that inspect sleep

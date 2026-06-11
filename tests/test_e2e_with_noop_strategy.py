@@ -18,7 +18,7 @@ class TestE2EWithNoOpStrategy:
 
         The same HTML is returned for every request, so it must satisfy BOTH
         parsers: the category link parser (``div.box-producto > a[href*="/libro-"]``)
-        and the product parser (``<h1>`` title — the only field that gates a row
+        and the product parser (``<h1>`` title - the only field that gates a row
         being saved). It provides 6 distinct ``/libro-`` links so the
         ``product_target`` cap always stops the crawl on the first page (max
         target used in these tests is 5); fewer links than the target would loop

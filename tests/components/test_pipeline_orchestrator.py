@@ -26,7 +26,7 @@ class TestWebCrawlerIntegration:
             output_path="test.csv"
         )
 
-        # Mock extraction and transformation — return links on page 1, empty on page 2
+        # Mock extraction and transformation - return links on page 1, empty on page 2
         page_calls = [0]
 
         def mock_extract(html):
