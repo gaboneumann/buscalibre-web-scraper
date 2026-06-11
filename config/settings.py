@@ -31,7 +31,7 @@ CAPTCHA_SLICE_TIMEOUT_MS = 90000
 # Rate limiting delays (in seconds) - ANTI-DETECTION: DO NOT REDUCE
 # - Normal inter-request delay: 2-6 seconds (happy path)
 # - Recovery delay after error (202/405): 10-20 seconds (post-error backoff)
-# - Coffee breaks every 10-15 products (150-250 seconds)
+# - Coffee breaks every 10-15 products (30-60 seconds)
 # These delays are essential to avoid rate-limiting and detection.
 DELAY_MIN = 2.0
 DELAY_MAX = 6.0
@@ -43,7 +43,7 @@ DELAY_RECOVERY_MAX = 20.0
 PRODUCT_TARGET = 0
 
 # Data export settings
-OUTPUT_PATH = "storage/outputs/books_arte.csv"
+OUTPUT_PATH = "storage/outputs/books_computacion.csv"
 
 # Exponential backoff bases (Phase 1: Smart Retry)
 BACKOFF_BASE_HTTP = 6  # HTTP retries: 6s → 12s → 24s

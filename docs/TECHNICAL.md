@@ -38,7 +38,7 @@ The scraper runs a two-level nested pipeline:
 │  │  │   (line-by-line to CSV immediately)         │   │    │
 │  │  │ • Delay: 2–6s × multiplier (Layer 8)         │   │    │
 │  │  │ • LAYER 4d: Coffee break every 10–15 books  │   │    │
-│  │  │             (150–250s human-like pause)      │   │    │
+│  │  │             (30-60s human-like pause)        │   │    │
 │  │  │ • 202 handling: 45–70s + context reset      │   │    │
 │  │  │ • Auto-stop if 3 consecutive blocks         │   │    │
 │  │  └─────────────────────────────────────────────┘   │    │
@@ -135,7 +135,7 @@ Six randomness points, each independent:
 | 4a: Warm-up jitter | `_initialize_session()` | 2–4s before navigating home |
 | 4b: Pre-request jitter | `client.get()` | 2–5s before each `page.goto()` |
 | 4c: Main delay | `category_pipeline.py` | 2–6s between products × Layer 8 multiplier (1.0–3.0) |
-| 4d: Coffee break | `category_pipeline.py` | 150–250s every 10–15 books |
+| 4d: Coffee break | `category_pipeline.py` | 30-60s every 10–15 books |
 | 4e: Post-block recovery | `category_pipeline.py` | 45–70s after 202 |
 | 4f: Page pause | `category_pipeline.py` | 60–90s between category pages |
 

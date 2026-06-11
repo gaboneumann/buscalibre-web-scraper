@@ -15,7 +15,7 @@ class TestDelayPolicy:
 
     def test_init_defaults_to_config_delays(self):
         """DelayPolicy defaults to config/settings DELAY_MIN and DELAY_MAX."""
-        # From CLAUDE.md: DELAY_MIN=30s, DELAY_MAX=55s (production)
+        # DELAY_MIN/DELAY_MAX default to config/settings.py (2-6s production)
         # But tests may use shorter delays
         policy = DelayPolicy()
         assert hasattr(policy, '_delay_min')
@@ -59,23 +59,23 @@ class TestDelayPolicy:
         assert len(set(intervals)) > 1
 
     @patch('time.sleep')
-    def test_wait_coffee_break_sleeps_in_150_to_250_range(self, mock_sleep):
-        """wait_coffee_break() sleeps for 150-250 seconds (2.5-4.2 min)."""
+    def test_wait_coffee_break_sleeps_in_30_to_60_range(self, mock_sleep):
+        """wait_coffee_break() sleeps for 30-60 seconds (0.5-1 min)."""
         policy = DelayPolicy()
         policy.wait_coffee_break()
         mock_sleep.assert_called_once()
         sleep_time = mock_sleep.call_args[0][0]
-        # From category_pipeline design: random.uniform(150, 250)
-        assert 150 <= sleep_time <= 250
+        # From category_pipeline design: random.uniform(30, 60)
+        assert 30 <= sleep_time <= 60
 
     @patch('time.sleep')
     def test_coffee_break_range_matches_design(self, mock_sleep):
-        """wait_coffee_break() uses 150-250s range from category_pipeline design."""
+        """wait_coffee_break() uses 30-60s range from category_pipeline design."""
         policy = DelayPolicy()
         policy.wait_coffee_break()
         mock_sleep.assert_called_once()
         sleep_time = mock_sleep.call_args[0][0]
-        assert 150 <= sleep_time <= 250
+        assert 30 <= sleep_time <= 60
 
     @patch('time.sleep')
     def test_both_delays_in_sleep_calls(self, mock_sleep):

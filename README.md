@@ -23,8 +23,8 @@ BuscaLibre uses **AWS WAF** with two challenge types: `challenge.js` (auto-resol
 
 | Metric | Value |
 | :------ | ----: |
-| Books extracted | **600** across 5 categories |
-| Categories tested | arte, tecnología, matemáticas, deportes, novela-gráfica |
+| Books extracted | **2500** across 2 categories |
+| Categories tested | computación, ciencias económicas |
 | Success rate | **100%** |
 | 202 blocks | **0** |
 | Anti-detection layers | 8 |
@@ -33,7 +33,7 @@ BuscaLibre uses **AWS WAF** with two challenge types: `challenge.js` (auto-resol
 
 ---
 
-**Multi-Category Capability**: The scraper is fully generic and tested across 5 distinct categories (art, technology, mathematics, sports, graphic novels). Target **any Buscalibre category** by changing `CATEGORY_URL` in config - same anti-detection robustness, zero blocks.
+**Multi-Category Capability**: The scraper is fully generic and tested across 2 distinct categories (computación, ciencias económicas). Target **any Buscalibre category** by changing `CATEGORY_URL` in config - same anti-detection robustness, zero blocks.
 
 ---
 
@@ -46,7 +46,7 @@ BuscaLibre uses **AWS WAF** with two challenge types: `challenge.js` (auto-resol
 | CAPTCHA | Not handled | Not handled | **Avoided via consistent fingerprint; manual solve as fallback** |
 | Sec-Fetch headers | Static `"none"` | Dynamic by context | **Automatic (real browser)** |
 | Context rotation | Every 50–100 (fixed) | Every 2–4 (random) | **Policy-based (10–15 products)** |
-| Delays | 10–20s | 30–55s + jitter | **2–6s + coffee breaks (150–250s)** |
+| Delays | 10–20s | 30–55s + jitter | **2–6s + coffee breaks (30-60s)** |
 | Block handling | Fixed retry | Fixed wait | **Exponential backoff (45s → 90s → 180s)** |
 | 202 rate | 70% | 0% | **0%** |
 
@@ -118,7 +118,7 @@ python main.py                       # run (rarely prompts a CAPTCHA; solve it i
 > The scraper uses `channel="chrome"` - it launches the real Google Chrome binary, NOT Playwright's bundled Chromium.
 > If Google Chrome is absent, startup fails immediately with a clear error. Install from [google.com/chrome](https://www.google.com/chrome/) before running.
 
-**Output:** CSV file with auto-generated name based on category (e.g., `storage/outputs/books_arte.csv`).
+**Output:** CSV file with auto-generated name based on category (e.g., `storage/outputs/books_computacion.csv`).
 
 **Fields:** `title, author, price, stock, page_index, product_url` - where `stock` is the available stock (integer count of units in stock, parsed from "Quedan N unidades").
 
@@ -130,11 +130,11 @@ python main.py                       # run (rarely prompts a CAPTCHA; solve it i
 
 ```python
 DOMAIN_URL = "https://www.buscalibre.cl/"
-CATEGORY_URL = "https://www.buscalibre.cl/libros/arte"
-PRODUCT_TARGET = 100
+CATEGORY_URL = "https://www.buscalibre.cl/libros/computacion"
+PRODUCT_TARGET = 0
 DELAY_MIN = 2.0
 DELAY_MAX = 6.0
-OUTPUT_PATH = "storage/outputs/books.csv"
+OUTPUT_PATH = "storage/outputs/books_computacion.csv"
 ```
 
 ### Via CLI flags
@@ -150,7 +150,7 @@ python main.py --config config.json --target 150     # Combine both
 ```json
 {
   "domain_url": "https://www.buscalibre.cl/",
-  "category_url": "https://www.buscalibre.cl/libros/arte",
+  "category_url": "https://www.buscalibre.cl/libros/computacion",
   "product_target": 100,
   "delay_min": 2.0,
   "delay_max": 6.0,
@@ -184,7 +184,7 @@ The scraper implements a **two-level nested iteration** with intelligent batch-a
 │  │  ├─ LEVEL 2 - Transform: parse_product(html) → Dict           │
 │  │  ├─ LEVEL 3 - Load: save_record() + checkpoint_mgr            │
 │  │  ├─ wait_between_products() [2–6s + multiplier×]              │
-│  │  ├─ Check: should_take_coffee_break()? → wait 150–250s        │
+│  │  ├─ Check: should_take_coffee_break()? → wait 30-60s          │
 │  │  └─ Check: product_target reached? → STOP                     │
 │  │                                                                │
 │  ├─ [BATCH SUMMARY] blocks vs successes in this page             │
@@ -210,7 +210,7 @@ The scraper implements a **two-level nested iteration** with intelligent batch-a
 - **Policies** (pluggable, reusable):
   - **SessionRotationPolicy**: Tracks products per session; on threshold (10–15), rotates and waits 10–15s
   - **BlockDetectionPolicy**: Tracks consecutive 202s; exponential backoff (45s → 90s → 180s); auto-abort after 3 consecutive
-  - **DelayPolicy**: Inter-request delays (2–6s), coffee breaks (150–250s every 10–15 products), multiplier-aware
+  - **DelayPolicy**: Inter-request delays (2–6s), coffee breaks (30-60s every 10–15 products), multiplier-aware
 - **Download Strategies**: Pluggable HTTP handlers (`AntiDetectionStrategy` with real browser; `NoOpStrategy` with instant fixtures)
 - **CheckpointManager**: Reads existing CSV → extracts scraped URLs → prevents duplicate processing on resume
 - **CSVSchema**: Validates parsed product data before writing
@@ -248,7 +248,7 @@ The scraper implements a **two-level nested iteration** with intelligent batch-a
 
 #### Delay Policy
 - **Inter-request:** 2–6 seconds (randomized)
-- **Coffee breaks:** Every 10–15 products, sleep 150–250 seconds (2.5–4.2 min)
+- **Coffee breaks:** Every 10–15 products, sleep 30-60 seconds (0.5-1 min)
 - **Purpose:** Human-like behavior, avoid pattern detection
 
 #### Adaptive Delay Backoff (Layer 8)

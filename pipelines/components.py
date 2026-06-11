@@ -1,4 +1,5 @@
 """Core crawler components: Policies and WebCrawler engine."""
+
 import logging
 import random
 import time
@@ -119,7 +120,12 @@ class BlockDetectionPolicy:
         # Use exponential backoff instead of uniform
         wait_time = self.get_backoff_wait(self._consecutive_failures)
 
-        logger.warning("BLOCK POLICY: failure %s/%s, waiting %.1fs (exponential)", self._consecutive_failures, self._threshold, wait_time)
+        logger.warning(
+            "BLOCK POLICY: failure %s/%s, waiting %.1fs (exponential)",
+            self._consecutive_failures,
+            self._threshold,
+            wait_time,
+        )
         return (should_abort, wait_time)
 
 
@@ -131,8 +137,8 @@ class DelayPolicy:
         delay_min: Optional[float] = None,
         delay_max: Optional[float] = None,
         coffee_break_interval: Optional[int] = None,
-        coffee_break_min: float = 150,
-        coffee_break_max: float = 250,
+        coffee_break_min: float = 30,
+        coffee_break_max: float = 60,
         page_wait_min: float = 60,
         page_wait_max: float = 90,
         rotation_wait_min: float = 10,
@@ -164,8 +170,12 @@ class DelayPolicy:
             scale_down: Factor to decrease multiplier on clean batches (default 0.9).
             block_rate_threshold: Block rate above which multiplier escalates (default 0.2).
         """
-        self._delay_min = delay_min if delay_min is not None else getattr(settings, 'DELAY_MIN', 30)
-        self._delay_max = delay_max if delay_max is not None else getattr(settings, 'DELAY_MAX', 55)
+        self._delay_min = (
+            delay_min if delay_min is not None else getattr(settings, "DELAY_MIN", 30)
+        )
+        self._delay_max = (
+            delay_max if delay_max is not None else getattr(settings, "DELAY_MAX", 55)
+        )
         self._coffee_break_interval = coffee_break_interval or random.randint(10, 15)
         self._coffee_break_min = coffee_break_min
         self._coffee_break_max = coffee_break_max
@@ -205,7 +215,9 @@ class DelayPolicy:
             The updated multiplier value.
         """
         if block_rate > self._block_rate_threshold:
-            self._multiplier = min(self._multiplier * self._scale_up, self._max_multiplier)
+            self._multiplier = min(
+                self._multiplier * self._scale_up, self._max_multiplier
+            )
         elif block_rate == 0.0:
             self._multiplier = max(self._multiplier * self._scale_down, 1.0)
         # else: 0.0 < block_rate <= threshold → HOLD (no change)
@@ -248,7 +260,9 @@ class DelayPolicy:
 
     def wait_post_rotation(self) -> None:
         """Sleep for post_rotation_wait_min to post_rotation_wait_max seconds after re-navigation."""
-        sleep_time = random.uniform(self._post_rotation_wait_min, self._post_rotation_wait_max)
+        sleep_time = random.uniform(
+            self._post_rotation_wait_min, self._post_rotation_wait_max
+        )
         time.sleep(sleep_time)
 
     def wait_block_backoff(self, wait_time: float) -> None:
@@ -331,7 +345,9 @@ class WebCrawler:
                 blocks_in_batch += 1
                 should_abort, _ = self.block_policy.on_failure()
                 if should_abort:
-                    logger.error("AUTO-STOP: Persistent category page blocking. Aborting.")
+                    logger.error(
+                        "AUTO-STOP: Persistent category page blocking. Aborting."
+                    )
                     return success_count
                 continue
 
@@ -348,7 +364,11 @@ class WebCrawler:
             logger.debug("Links on page %s shuffled.", page_index)
 
             for link in links:
-                full_link = link if link.startswith("http") else f"https://www.buscalibre.cl{link}"
+                full_link = (
+                    link
+                    if link.startswith("http")
+                    else f"https://www.buscalibre.cl{link}"
+                )
                 if full_link in scraped_urls:
                     continue
 
@@ -358,7 +378,10 @@ class WebCrawler:
                     books_in_session = 0
                     self.delay_policy.wait_session_rotation()
                     logger.debug("[Post-rotation cascade] Re-navigating to category...")
-                    self.client.get(build_page(self.config.category_url, page_index), request_type="category")
+                    self.client.get(
+                        build_page(self.config.category_url, page_index),
+                        request_type="category",
+                    )
                     self.delay_policy.wait_post_rotation()
 
                 html_prod = self.client.get(full_link, request_type="product")
@@ -394,10 +417,15 @@ class WebCrawler:
                     success_count += 1
                     books_in_session += 1
                     successful_in_batch += 1
-                    logger.log(EXTRACTED, "[%s] : %s", success_count, record['title'])
+                    logger.log(EXTRACTED, "[%s] : %s", success_count, record["title"])
 
-                    if self.config.product_target > 0 and success_count >= self.config.product_target:
-                        logger.info("TARGET REACHED: %s products. Stopping.", success_count)
+                    if (
+                        self.config.product_target > 0
+                        and success_count >= self.config.product_target
+                    ):
+                        logger.info(
+                            "TARGET REACHED: %s products. Stopping.", success_count
+                        )
                         return success_count
 
                 self.delay_policy.wait_between_products()
@@ -413,7 +441,10 @@ class WebCrawler:
             # max(1, total), which would feed a spurious block_rate=0.0 into decay.
             total = blocks_in_batch + successful_in_batch
             if total == 0:
-                logger.debug("LAYER 8: empty batch, hold multiplier at %.2f", self.delay_policy.multiplier)
+                logger.debug(
+                    "LAYER 8: empty batch, hold multiplier at %.2f",
+                    self.delay_policy.multiplier,
+                )
             else:
                 block_rate = blocks_in_batch / total
                 new_multiplier = self.delay_policy.update_multiplier(block_rate)
