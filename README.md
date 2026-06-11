@@ -355,4 +355,14 @@ Verify compliance with local law and the site's Terms of Service before running 
 
 ---
 
-**Gabriel Neumann** · [LinkedIn](https://www.linkedin.com/in/gaboneumann/) · [GitHub](https://github.com/gaboneumann)
+## Author
+
+**Gabriel Neumann**
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0A66C2?logo=linkedin&logoColor=white)](https://www.linkedin.com/in/gaboneumann/)
+[![GitHub](https://img.shields.io/badge/GitHub-Follow-181717?logo=github&logoColor=white)](https://github.com/gaboneumann)
+
+---
+
+## License
+
+Distributed under the MIT license. See [`LICENSE`](LICENSE) for more information.
