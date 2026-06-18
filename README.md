@@ -37,18 +37,18 @@ BuscaLibre uses **AWS WAF** with two challenge types: `challenge.js` (auto-resol
 
 ---
 
-## Evolution: V1 → V2 → V3
+## Evolution: V1 → V2 → V3 → V4
 
-| | V1 | V2 | **V3 (current)** |
-|---|---|---|---|
-| HTTP client | curl_cffi generic | `impersonate="chrome120"` | **Real Playwright browser** |
-| WAF | Cloudflare (assumed) | Cloudflare (assumed) | **AWS WAF (confirmed)** |
-| CAPTCHA | Not handled | Not handled | **Avoided via consistent fingerprint; manual solve as fallback** |
-| Sec-Fetch headers | Static `"none"` | Dynamic by context | **Automatic (real browser)** |
-| Context rotation | Every 50–100 (fixed) | Every 2–4 (random) | **Policy-based (10–15 products)** |
-| Delays | 10–20s | 30–55s + jitter | **2–6s + coffee breaks (30-60s)** |
-| Block handling | Fixed retry | Fixed wait | **Exponential backoff (45s → 90s → 180s)** |
-| 202 rate | 70% | 0% | **0%** |
+| | V1 | V2 | V3 | **V4 (current)** |
+|---|---|---|---|---|
+| HTTP client | curl_cffi generic | `impersonate="chrome120"` | Real Playwright browser | **Real Playwright browser** |
+| WAF | Cloudflare (assumed) | Cloudflare (assumed) | AWS WAF (confirmed) | **AWS WAF (confirmed)** |
+| CAPTCHA | Not handled | Not handled | Solved once, token cached | **Avoided via consistent fingerprint; manual solve as fallback** |
+| Sec-Fetch headers | Static `"none"` | Dynamic by context | Automatic (real browser) | **Automatic (real browser)** |
+| Context rotation | Every 50–100 (fixed) | Every 2–4 (random) | Context rotates, token persists | **Policy-based (10–15 products)** |
+| Delays | 10–20s | 30–55s + jitter | 8–15s + 6 randomness points | **2–6s + coffee breaks (30-60s)** |
+| Block handling | Fixed retry | Fixed wait | Exponential backoff (45s → 90s → 180s) | **Exponential backoff (45s → 90s → 180s)** |
+| 202 rate | 70% | 0% | 0% | **0%** |
 
 ---
 
